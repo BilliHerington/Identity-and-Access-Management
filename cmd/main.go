@@ -2,14 +2,13 @@ package main
 
 import (
 	"IAM/initializers"
+	"IAM/pkg/handlers"
 	"IAM/pkg/logs"
 	"github.com/gin-gonic/gin"
-	"net/http"
 	"os"
 )
 
-// TODO: логи
-// TODO:
+// TODO: защита JWT
 
 func init() {
 	debugMode := os.Getenv("DEBUG_MODE") == "true"
@@ -24,12 +23,8 @@ func main() {
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
 
-	// Маршрут для проверки статуса сервера
-	router.GET("/ping", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{
-			"message": "pong",
-		})
-	})
+	router.POST("/register", handlers.Registration)
+	router.POST("/auth", handlers.Authenticate)
 	err := router.Run()
 	if err != nil {
 		logs.Error.Fatalf("error run server %v", err)
