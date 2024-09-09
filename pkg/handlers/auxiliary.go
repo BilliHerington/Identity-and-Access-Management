@@ -6,11 +6,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v8"
 )
 
-func EmailMatch(c *gin.Context, email string) (bool, error) {
+func EmailMatch(email string) (bool, error) {
 	ctx := context.Background()
 
 	// Проверка наличия email в Redis
@@ -35,4 +34,20 @@ func GetUserIDByEmail(ctx context.Context, email string) (string, error) {
 		return "", err
 	}
 	return userID, nil
+}
+func RoleMatch(roleKey string) (bool, error) {
+	ctx := context.Background()
+	res, err := initializers.Rdb.HGetAll(ctx, roleKey).Result()
+	if err != nil {
+		if errors.Is(err, redis.Nil) {
+			return false, nil
+		} else {
+			return false, err
+		}
+	}
+	logs.Info.Printf("res: %s, res type: %T\n", res, res)
+	if res[""] == "" {
+		return false, nil
+	}
+	return true, nil
 }

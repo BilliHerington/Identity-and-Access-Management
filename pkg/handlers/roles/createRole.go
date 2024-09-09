@@ -2,11 +2,11 @@ package roles
 
 import (
 	"IAM/initializers"
+	"IAM/pkg/handlers"
 	"IAM/pkg/logs"
 	"IAM/pkg/models"
 	"context"
 	"encoding/json"
-	"errors"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v8"
 	"log"
@@ -22,26 +22,16 @@ func CreateRole(c *gin.Context) {
 	}
 
 	roleKey := "role:" + input.Name
-	err := initializers.Rdb.HGetAll(c, roleKey).Err()
+	match, err := handlers.RoleMatch(roleKey)
 	if err != nil {
-		if !errors.Is(err, redis.Nil) {
-			logs.Error.Println(err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
-		}
-	} else {
-		c.JSON(http.StatusOK, gin.H{"role already exists": input.Name})
+		logs.Error.Println(err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	} else if match {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "role already exists"})
 		return
 	}
-	//if err == nil {
-	//	c.JSON(http.StatusConflict, gin.H{"error": "role already exist"})
-	//	return
-	//} else {
-	//	logs.Error.Println(err)
-	//	c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-	//	return
-	//}
-	// Сериализуем Privileges
+
 	privilegesJSON, err := json.Marshal(input.Privileges)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -59,7 +49,7 @@ func CreateRole(c *gin.Context) {
 			return nil
 		})
 		return err
-	}, "role:"+input.Name)
+	}, roleKey)
 	if err != nil {
 		logs.Error.Println(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
