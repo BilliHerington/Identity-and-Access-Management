@@ -3,14 +3,13 @@ package access
 import (
 	"IAM/initializers"
 	"IAM/pkg/handlers"
+	"IAM/pkg/jwtHandlers"
 	"IAM/pkg/logs"
 	"IAM/pkg/models"
 	"context"
-	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 	"net/http"
-	"time"
 )
 
 func Authenticate(c *gin.Context) {
@@ -22,7 +21,7 @@ func Authenticate(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	emailMatch, err := handlers.EmailMatch(c, input.Email)
+	emailMatch, err := handlers.EmailMatch(input.Email)
 	if err != nil {
 		logs.Error.Println(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -51,20 +50,14 @@ func Authenticate(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	// Generate JWT token
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"email": input.Email,                           // Добавляем в токен данные (в данном случае email)
-		"exp":   time.Now().Add(time.Hour * 24).Unix(), // Устанавливаем время жизни токена
-	})
-	// Подписываем токен с использованием секретного ключа
-	tokenString, err := token.SignedString(initializers.JwtSecretKey)
+	signedToken, err := jwtHandlers.CreateJWT(c, input.Email)
 	if err != nil {
-		logs.Error.Println(err.Error())
+		logs.Error.Println(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 	ctx := context.Background()
-	err = initializers.Rdb.HSet(ctx, "user:"+id, "jwt", tokenString).Err()
+	err = initializers.Rdb.HSet(ctx, "user:"+id, "jwt", signedToken).Err()
 	if err != nil {
 		logs.Error.Println(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
