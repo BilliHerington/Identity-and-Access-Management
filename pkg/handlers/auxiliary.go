@@ -45,7 +45,7 @@ func RoleMatch(roleKey string) (bool, error) {
 			return false, err
 		}
 	}
-	logs.Info.Printf("res: %s, res type: %T\n", res, res)
+	//logs.Info.Printf("res: %s, res type: %T\n", res, res)
 	if res[""] == "" {
 		return false, nil
 	}
