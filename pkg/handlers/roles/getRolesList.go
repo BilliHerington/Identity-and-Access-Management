@@ -8,7 +8,7 @@ import (
 	"net/http"
 )
 
-func GetRoles(c *gin.Context) {
+func GetRolesList(c *gin.Context) {
 	ctx := context.Background()
 	roles, err := initializers.Rdb.SMembers(ctx, "roles").Result()
 	if err != nil {

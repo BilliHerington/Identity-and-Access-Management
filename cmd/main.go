@@ -29,17 +29,21 @@ func main() {
 	//маршруты для входа/регистрации
 	router.POST("/register", access.Registration)
 	router.POST("/auth", access.Authenticate)
-	router.GET("/users", access.GetUsers)
+	router.GET("get-users", access.GetUsersList)
+	router.GET("/get-all-users-data", access.GetAllUsersData)
 
 	//маршруты для управления ролями
 	//router.POST("/create-role", roles.CreateRole)
-	router.GET("/roles", roles.GetRoles)
+	router.GET("/get-roles", roles.GetRolesList)
+	router.GET("/get-all-roles-data", roles.GetAllRolesData)
 	router.POST("/assign-role", roles.AssignRole)
+	router.POST("/redact-role", roles.RedactRole)
+	router.POST("/create-role-no-auth", roles.CreateRole)
+	router.DELETE("/delete-user", access.DeleteUser)
 
 	router.Use(middlewares.AuthMiddleware())
 	//Пример защищенного маршрута, который требует привилегию "create"
 	router.POST("/create-role", middlewares.CheckPrivileges("create"), func(c *gin.Context) {}, roles.CreateRole)
-	router.DELETE("/delete-user", middlewares.CheckPrivileges("delete"), func(c *gin.Context) {}, access.DeleteUser)
 	err := router.Run()
 	if err != nil {
 		logs.Error.Fatalf("error run server %v", err)

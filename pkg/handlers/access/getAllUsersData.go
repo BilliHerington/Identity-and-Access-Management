@@ -8,7 +8,7 @@ import (
 	"net/http"
 )
 
-func GetUsers(c *gin.Context) {
+func GetAllUsersData(c *gin.Context) {
 	ctx := context.Background()
 
 	// Получение всех email-ов пользователей
