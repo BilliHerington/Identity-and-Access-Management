@@ -38,16 +38,13 @@ func GetUserIDByEmail(ctx context.Context, email string) (string, error) {
 func RoleMatch(roleKey string) (bool, error) {
 	ctx := context.Background()
 	res, err := initializers.Rdb.HGetAll(ctx, roleKey).Result()
+	logs.Info.Printf("res:%s\n restype:%T\n err:%v\n", res, res, err)
 	if err != nil {
-		if errors.Is(err, redis.Nil) {
-			return false, nil
-		} else {
-			return false, err
-		}
+		return true, err
 	}
-	//logs.Info.Printf("res: %s, res type: %T\n", res, res)
-	if res[""] == "" {
+	if len(res) == 0 {
 		return false, nil
 	}
+
 	return true, nil
 }

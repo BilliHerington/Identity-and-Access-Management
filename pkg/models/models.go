@@ -1,6 +1,8 @@
 package models
 
-import "github.com/dgrijalva/jwt-go"
+import (
+	"github.com/dgrijalva/jwt-go"
+)
 
 type RegisterData struct {
 	//	ID       string `json:"id" binding:"required"`          // Уникальный идентификатор пользователя, обязательно
@@ -40,4 +42,10 @@ type UserRoleData struct {
 type Claims struct {
 	UserID string `json:"user_id"`
 	jwt.StandardClaims
+}
+type DeleteUserData struct {
+	UserID string `json:"user_id"`
+}
+type DeleteRoleData struct {
+	Name string `json:"name"`
 }

@@ -31,6 +31,7 @@ func main() {
 	router.POST("/auth", access.Authenticate)
 	router.GET("get-users", access.GetUsersList)
 	router.GET("/get-all-users-data", access.GetAllUsersData)
+	router.DELETE("/delete-user", access.DeleteUser)
 
 	//маршруты для управления ролями
 	//router.POST("/create-role", roles.CreateRole)
@@ -38,8 +39,8 @@ func main() {
 	router.GET("/get-all-roles-data", roles.GetAllRolesData)
 	router.POST("/assign-role", roles.AssignRole)
 	router.POST("/redact-role", roles.RedactRole)
-	router.POST("/create-role-no-auth", roles.CreateRole)
-	router.DELETE("/delete-user", access.DeleteUser)
+	//router.POST("/create-role", roles.CreateRole)
+	router.DELETE("/delete-role", roles.DeleteRole)
 
 	router.Use(middlewares.AuthMiddleware())
 	//Пример защищенного маршрута, который требует привилегию "create"
