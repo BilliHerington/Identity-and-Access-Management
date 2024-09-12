@@ -2,11 +2,12 @@ package main
 
 import (
 	"IAM/initializers"
+	"IAM/pkg/googleAuth"
 	"IAM/pkg/handlers/access"
 	"IAM/pkg/handlers/roles"
 	"IAM/pkg/logs"
-	"IAM/pkg/middlewares"
 	"github.com/gin-gonic/gin"
+	"net/http"
 	"os"
 )
 
@@ -26,6 +27,18 @@ func main() {
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
 
+	config, err := initializers.LoadCredentials()
+	if err != nil {
+		panic(err)
+	}
+	router.GET("/oauth", func(c *gin.Context) {
+		authURL := googleAuth.GetAuthURL(config)
+		c.Redirect(http.StatusFound, authURL)
+	})
+	router.GET("auth/callback", func(c *gin.Context) {
+		googleAuth.GoogleLogin(c, config)
+	})
+
 	//маршруты для входа/регистрации
 	router.POST("/register", access.Registration)
 	router.POST("/auth", access.Authenticate)
@@ -42,10 +55,10 @@ func main() {
 	//router.POST("/create-role", roles.CreateRole)
 	router.DELETE("/delete-role", roles.DeleteRole)
 
-	router.Use(middlewares.AuthMiddleware())
-	//Пример защищенного маршрута, который требует привилегию "create"
-	router.POST("/create-role", middlewares.CheckPrivileges("create"), func(c *gin.Context) {}, roles.CreateRole)
-	err := router.Run()
+	//router.Use(middlewares.AuthMiddleware())
+	////Пример защищенного маршрута, который требует привилегию "create"
+	//router.POST("/create-role", middlewares.CheckPrivileges("create"), func(c *gin.Context) {}, roles.CreateRole)
+	err = router.Run()
 	if err != nil {
 		logs.Error.Fatalf("error run server %v", err)
 	}
