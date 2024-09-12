@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
-	"google.golang.org/api/people/v1"
 	"io"
 	"os"
 )
@@ -24,7 +23,9 @@ func LoadCredentials() (*oauth2.Config, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to read credentials file: %v", err)
 	}
-	config, err := google.ConfigFromJSON(fileBytes, people.ContactsScope)
+
+	scopes := []string{"https://www.googleapis.com/auth/userinfo.email", "https://www.googleapis.com/auth/userinfo.profile"}
+	config, err := google.ConfigFromJSON(fileBytes, scopes[0], scopes[1])
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse credentials file: %v", err)
 	}
