@@ -51,12 +51,12 @@ func Registration(c *gin.Context) {
 	err = initializers.Rdb.Watch(ctx, func(tx *redis.Tx) error {
 		_, err = tx.Pipelined(ctx, func(pipe redis.Pipeliner) error {
 			pipe.HMSet(ctx, "user:"+userID, map[string]interface{}{
-				"id":          userID,
-				"email":       input.Email,
-				"name":        input.Name,
-				"password":    input.Password,
-				"role":        input.Role,
-				"jwtHandlers": input.JWT,
+				"id":       userID,
+				"email":    input.Email,
+				"name":     input.Name,
+				"password": input.Password,
+				"role":     input.Role,
+				"jwt":      input.JWT,
 			})
 			pipe.SAdd(ctx, "users", userID)
 			return nil

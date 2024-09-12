@@ -6,7 +6,6 @@ import (
 	"IAM/pkg/jwtHandlers"
 	"IAM/pkg/logs"
 	"IAM/pkg/models"
-	"context"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 	"net/http"
@@ -50,18 +49,5 @@ func Authenticate(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	signedToken, err := jwtHandlers.CreateJWT(c, input.Email)
-	if err != nil {
-		logs.Error.Println(err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-	ctx := context.Background()
-	err = initializers.Rdb.HSet(ctx, "user:"+id, "jwt", signedToken).Err()
-	if err != nil {
-		logs.Error.Println(err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{"message": "JWT updated successfully"})
+	jwtHandlers.UpdateJWT(c, id, input.Email)
 }

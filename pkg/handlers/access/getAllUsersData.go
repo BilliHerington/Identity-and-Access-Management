@@ -11,17 +11,17 @@ import (
 func GetAllUsersData(c *gin.Context) {
 	ctx := context.Background()
 
-	// Получение всех email-ов пользователей
-	emails, err := initializers.Rdb.SMembers(ctx, "users").Result()
+	// Получение всех id пользователей
+	IDs, err := initializers.Rdb.SMembers(ctx, "users").Result()
 	if err != nil {
 		logs.Error.Println(err.Error())
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	// 2. Для каждого email получаем данные пользователя
+	// 2. Для каждого id получаем данные пользователя
 	var users []map[string]string
-	for _, email := range emails {
-		userData, err := initializers.Rdb.HGetAll(ctx, "user:"+email).Result()
+	for _, id := range IDs {
+		userData, err := initializers.Rdb.HGetAll(ctx, "user:"+id).Result()
 		if err != nil {
 			logs.Error.Println(err.Error())
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

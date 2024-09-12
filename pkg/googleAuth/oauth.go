@@ -3,6 +3,7 @@ package googleAuth
 import (
 	"IAM/initializers"
 	"IAM/pkg/handlers"
+	"IAM/pkg/jwtHandlers"
 	"IAM/pkg/logs"
 	"context"
 	"errors"
@@ -51,55 +52,62 @@ func GetUserInfo(token *oauth2.Token, config *oauth2.Config) (*people.Person, er
 	}
 	return person, nil
 }
-func GoogleLogin(c *gin.Context, config *oauth2.Config) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		token, err := HandleOAuthCallback(c, config)
-		if err != nil {
-			logs.Error.Println(err)
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-		userInfo, err := GetUserInfo(token, config)
-		if err != nil {
-			logs.Error.Println(err)
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-		//c.JSON(http.StatusOK, gin.H{
-		//	"name":  userInfo.Names[0].DisplayName,
-		//	"email": userInfo.EmailAddresses[0].Value,
-		//})
-		match, err := handlers.EmailMatch(userInfo.EmailAddresses[0].Value)
+func GoogleLogin(c *gin.Context) {
+	config, err := initializers.LoadCredentials()
+	if err != nil {
+		logs.Error.Println(err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	token, err := HandleOAuthCallback(c, config)
+	if err != nil {
+		logs.Error.Println(err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	userInfo, err := GetUserInfo(token, config)
+	if err != nil {
+		logs.Error.Println(err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	match, err := handlers.EmailMatch(userInfo.EmailAddresses[0].Value)
+	if err != nil {
+		logs.Error.Println(err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	userID := uuid.New().String()[:8]
+	email := userInfo.EmailAddresses[0].Value
+	name := userInfo.Names[0].DisplayName
+	if !match {
+		ctx := context.Background()
+		err = initializers.Rdb.Watch(ctx, func(tx *redis.Tx) error {
+			_, err = tx.Pipelined(ctx, func(pipe redis.Pipeliner) error {
+				pipe.HMSet(ctx, "user:"+userID, map[string]interface{}{
+					"id":       userID,
+					"email":    email,
+					"name":     name,
+					"password": "",
+					"role":     "reader",
+					"jwt":      "",
+				})
+				pipe.SAdd(ctx, "users", userID)
+				return nil
+			})
+			return err
+		}, "user:"+userID)
 		if err != nil {
 			logs.Error.Println(err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
-		if !match {
-			userID := uuid.New().String()[:8]
-			ctx := context.Background()
-			err = initializers.Rdb.Watch(ctx, func(tx *redis.Tx) error {
-				_, err = tx.Pipelined(ctx, func(pipe redis.Pipeliner) error {
-					pipe.HMSet(ctx, "user:"+userID, map[string]interface{}{
-						"id":          userID,
-						"email":       userInfo.EmailAddresses[0].Value,
-						"name":        userInfo.Names[0].DisplayName,
-						"password":    "",
-						"role":        "reader",
-						"jwtHandlers": "",
-					})
-					pipe.SAdd(ctx, "users", userID)
-					return nil
-				})
-				return err
-			}, "user:"+userID)
-			if err != nil {
-				logs.Error.Println(err)
-				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-				return
-			}
-		} else {
-			
+		err = initializers.Rdb.Set(ctx, "email:"+email, userID, 0).Err()
+		if err != nil {
+			logs.Error.Println(err.Error())
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
 		}
 	}
+	jwtHandlers.UpdateJWT(c, userID, email)
 }
