@@ -8,7 +8,6 @@ import (
 	"IAM/pkg/logs"
 	"IAM/pkg/middlewares"
 	"github.com/gin-gonic/gin"
-	"net/http"
 	"os"
 )
 
@@ -28,36 +27,30 @@ func main() {
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
 
-	config, err := initializers.LoadCredentials()
-	if err != nil {
-		panic(err)
+	public := router.Group("/")
+	{
+		public.GET("/oauth", googleAuth.OauthRedirect)
+		public.GET("auth/callback", googleAuth.GoogleLogin)
+
+		public.POST("/register", access.Registration)
+		public.POST("/auth", access.Authenticate)
 	}
-	router.GET("/oauth", func(c *gin.Context) {
-		authURL := googleAuth.GetAuthURL(config)
-		c.Redirect(http.StatusFound, authURL)
-	})
-	router.GET("auth/callback", googleAuth.GoogleLogin)
-
-	//маршруты для входа/регистрации
-	router.POST("/register", access.Registration)
-	router.POST("/auth", access.Authenticate)
-	router.GET("/get-users", access.GetUsersList)
-	router.GET("/get-all-users-data", access.GetAllUsersData)
-	router.DELETE("/delete-user", access.DeleteUser)
-
-	//маршруты для управления ролями
-	//router.POST("/create-role", roles.CreateRole)
-	router.GET("/get-roles", roles.GetRolesList)
-	router.GET("/get-all-roles-data", roles.GetAllRolesData)
-	router.POST("/assign-role", roles.AssignRole)
-	router.POST("/redact-role", roles.RedactRole)
-	//router.POST("/create-role", roles.CreateRole)
-	router.DELETE("/delete-role", roles.DeleteRole)
-
-	//router.Use(middlewares.AuthMiddleware())
-	////Пример защищенного маршрута, который требует привилегию "create"
-	router.POST("/create-role", middlewares.CheckPrivileges("create"), func(c *gin.Context) {}, roles.CreateRole)
-	err = router.Run()
+	protected := router.Group("/")
+	{
+		protected.Use(middlewares.AuthMiddleware())
+		//---users----
+		protected.GET("/get-users", access.GetUsersList)
+		protected.GET("/get-all-users-data", middlewares.CheckPrivileges("read"), access.GetAllUsersData)
+		protected.DELETE("/delete-user", middlewares.CheckPrivileges("delete"), access.DeleteUser)
+		//---roles----
+		protected.GET("/get-roles", roles.GetRolesList)
+		protected.GET("/get-all-roles-data", roles.GetAllRolesData)
+		protected.POST("/assign-role", middlewares.CheckPrivileges("edit"), roles.AssignRole)
+		protected.POST("/create-role", middlewares.CheckPrivileges("create"), roles.CreateRole)
+		protected.DELETE("/delete-role", middlewares.CheckPrivileges("create"), roles.DeleteRole)
+		protected.POST("/redact-role", middlewares.CheckPrivileges("create"), roles.RedactRole)
+	}
+	err := router.Run()
 	if err != nil {
 		logs.Error.Fatalf("error run server %v", err)
 	}
