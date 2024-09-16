@@ -24,8 +24,8 @@ func LoadCredentials() (*oauth2.Config, error) {
 		return nil, fmt.Errorf("failed to read credentials file: %v", err)
 	}
 
-	scopes := []string{"https://www.googleapis.com/auth/userinfo.email", "https://www.googleapis.com/auth/userinfo.profile"}
-	config, err := google.ConfigFromJSON(fileBytes, scopes[0], scopes[1])
+	scopes := []string{"https://www.googleapis.com/auth/userinfo.email", "https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/gmail.send", "https://www.googleapis.com/auth/gmail.compose", "https://mail.google.com/"}
+	config, err := google.ConfigFromJSON(fileBytes, scopes...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse credentials file: %v", err)
 	}

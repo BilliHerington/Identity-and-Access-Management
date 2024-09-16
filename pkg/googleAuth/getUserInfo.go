@@ -1,6 +1,7 @@
 package googleAuth
 
 import (
+	"IAM/pkg/logs"
 	"context"
 	"fmt"
 	"golang.org/x/oauth2"
@@ -14,12 +15,21 @@ func GetUserInfo(token *oauth2.Token, config *oauth2.Config) (*people.Person, er
 	ctx := context.Background()
 	srv, err := people.NewService(ctx, option.WithHTTPClient(client)) // создание клиента для работы с Google People API
 	if err != nil {
-		return nil, fmt.Errorf("unacle to create people client: %v", err)
+		return nil, fmt.Errorf("unable to create people client: %v", err)
 	}
+
 	// запрос к API для получения информации о пользователе
 	person, err := srv.People.Get("people/me").PersonFields("names,emailAddresses").Do()
 	if err != nil {
-		return nil, fmt.Errorf("unacle to get people: %v", err)
+		return nil, fmt.Errorf("unable to get people: %v", err)
 	}
+
+	// Логирование информации об электронной почте
+	if len(person.EmailAddresses) == 0 {
+		logs.Error.Println("Email not found in user info")
+		return nil, fmt.Errorf("email not found")
+	}
+
+	logs.Info.Println("User email:", person.EmailAddresses[0].Value)
 	return person, nil
 }

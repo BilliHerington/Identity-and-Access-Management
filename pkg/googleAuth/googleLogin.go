@@ -31,6 +31,7 @@ func GoogleLogin(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+
 	match, err := handlers.EmailMatch(userInfo.EmailAddresses[0].Value)
 	if err != nil {
 		logs.Error.Println(err)
@@ -40,6 +41,7 @@ func GoogleLogin(c *gin.Context) {
 	userID := uuid.New().String()[:8]
 	email := userInfo.EmailAddresses[0].Value
 	name := userInfo.Names[0].DisplayName
+
 	if !match {
 		ctx := context.Background()
 		err = initializers.Rdb.Watch(ctx, func(tx *redis.Tx) error {

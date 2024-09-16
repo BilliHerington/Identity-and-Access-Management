@@ -18,16 +18,6 @@ type AuthData struct {
 	Password string `json:"password" binding:"required"`
 }
 
-//type UserData struct {
-//	ID    string `json:"id"`
-//	Name  string `json:"name"`
-//	Email string `json:"email"`
-//	Role  string `json:"role"`
-//	JWT   string `json:"jwtHandlers"`
-//}
-
-//var AllRolesList []RoleStruct
-
 // RolesData структура для хранения ролей и их привилегий
 type RolesData struct {
 	Name       string   `json:"name" binding:"required"`
@@ -48,4 +38,84 @@ type DeleteUserData struct {
 }
 type DeleteRoleData struct {
 	Name string `json:"name"`
+}
+
+type PrivilegeData struct {
+	// -----Admin Privileges-----
+	DeleteUser      string
+	RedactUser      string
+	GetUserData     string
+	CreateRole      string
+	DeleteRole      string
+	GetRoleData     string
+	AccessSystem    string
+	AccessLogs      string
+	AccessAnalytics string
+
+	// -----Project Manager Privileges-----
+	CreateProject string
+	ManageProject string
+	AssignTasks   string
+	ViewReports   string
+	ViewUsers     string
+
+	// -----Developer Privileges-----
+	AccessProjects string
+	CommitCode     string
+	ManageTasks    string
+	ViewTeamData   string
+
+	// -----QA Tester Privileges-----
+	AccessTestProjects string
+	ReportBugs         string
+	EditBugs           string
+	ViewTestTasks      string
+
+	// -----Support Privileges-----
+	HandleTickets string
+	ViewUserInfo  string
+
+	// -----User Privileges-----
+	AccessResources    string
+	InteractWithSystem string
+}
+
+var Privileges = PrivilegeData{
+	// -----Admin Privileges-----
+	DeleteUser:      "deleteUser",
+	RedactUser:      "redactUser",
+	GetUserData:     "getUserData",
+	CreateRole:      "createRole",
+	DeleteRole:      "deleteRole",
+	GetRoleData:     "getRoleData",
+	AccessSystem:    "accessSystem",
+	AccessLogs:      "accessLogs",
+	AccessAnalytics: "accessAnalytics",
+
+	// -----Project Manager Privileges-----
+	CreateProject: "createProject",
+	ManageProject: "manageProject",
+	AssignTasks:   "assignTasks",
+	ViewReports:   "viewReports",
+	ViewUsers:     "viewUsers",
+
+	// -----Developer Privileges-----
+	AccessProjects: "accessProjects",
+	CommitCode:     "commitCode",
+	ManageTasks:    "manageTasks",
+	ViewTeamData:   "viewTeamData",
+
+	// -----QA Tester Privileges-----
+	AccessTestProjects: "accessTestProjects",
+	ReportBugs:         "reportBugs",
+	EditBugs:           "editBugs",
+	ViewTestTasks:      "viewTestTasks",
+
+	// -----Support Privileges-----
+	HandleTickets: "handleTickets",
+	ViewUserInfo:  "viewUserInfo",
+
+	// -----User Privileges-----
+	AccessResources:    "accessResources",
+	InteractWithSystem: "interactWithSystem",
 }
