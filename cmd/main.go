@@ -7,12 +7,10 @@ import (
 	"IAM/pkg/handlers/roles"
 	"IAM/pkg/logs"
 	"IAM/pkg/middlewares"
+	"IAM/pkg/models"
 	"github.com/gin-gonic/gin"
 	"os"
 )
-
-// TODO: защита JWT
-// TODO: структурировать доступы
 
 func init() {
 	debugMode := os.Getenv("DEBUG_MODE") == "true"
@@ -40,15 +38,15 @@ func main() {
 		protected.Use(middlewares.AuthMiddleware())
 		//---users----
 		protected.GET("/get-users", access.GetUsersList)
-		protected.GET("/get-all-users-data", middlewares.CheckPrivileges("read"), access.GetAllUsersData)
-		protected.DELETE("/delete-user", middlewares.CheckPrivileges("delete"), access.DeleteUser)
+		protected.GET("/get-all-users-data", middlewares.CheckPrivileges(models.Privileges.GetUserData), access.GetAllUsersData)
+		protected.DELETE("/delete-user", middlewares.CheckPrivileges(models.Privileges.DeleteUser), access.DeleteUser)
 		//---roles----
 		protected.GET("/get-roles", roles.GetRolesList)
 		protected.GET("/get-all-roles-data", roles.GetAllRolesData)
-		protected.POST("/assign-role", middlewares.CheckPrivileges("edit"), roles.AssignRole)
-		protected.POST("/create-role", middlewares.CheckPrivileges("create"), roles.CreateRole)
-		protected.DELETE("/delete-role", middlewares.CheckPrivileges("create"), roles.DeleteRole)
-		protected.POST("/redact-role", middlewares.CheckPrivileges("create"), roles.RedactRole)
+		protected.POST("/assign-role", middlewares.CheckPrivileges(models.Privileges.CreateRole), roles.AssignRole)
+		protected.POST("/create-role", middlewares.CheckPrivileges(models.Privileges.CreateRole), roles.CreateRole)
+		protected.DELETE("/delete-role", middlewares.CheckPrivileges(models.Privileges.DeleteRole), roles.DeleteRole)
+		protected.POST("/redact-role", middlewares.CheckPrivileges(models.Privileges.CreateRole), roles.RedactRole)
 	}
 	err := router.Run()
 	if err != nil {
