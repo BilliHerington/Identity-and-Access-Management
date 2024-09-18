@@ -50,4 +50,5 @@ func Authenticate(c *gin.Context) {
 		return
 	}
 	jwtHandlers.UpdateJWT(c, id, input.Email)
+
 }

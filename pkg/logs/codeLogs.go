@@ -2,7 +2,7 @@ package logs
 
 import (
 	"github.com/fatih/color"
-	"io/ioutil"
+	"io"
 	"log"
 	"os"
 )
@@ -30,7 +30,7 @@ func InitLoggers(debugMode bool) {
 		Debug = log.New(os.Stdout, debugColor("DEBUG: "), log.Ldate|log.Ltime|log.Lshortfile)
 		Debug.Println("DEBUG MODE ON")
 	} else {
-		Debug = log.New(ioutil.Discard, "", 0) // Пустой вывод
+		Debug = log.New(io.Discard, "", 0) // Пустой вывод
 	}
 
 }

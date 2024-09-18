@@ -16,12 +16,12 @@ func init() {
 	debugMode := os.Getenv("DEBUG_MODE") == "true"
 	logs.InitLoggers(debugMode)
 	initializers.LoadEnvVariables()
-
+	initializers.InitLogrus()
 }
 func main() {
 	initializers.InitRedis()
+	initializers.Lgrs.Info("This is an info log")
 
-	// Создание нового маршрутизатора Gin
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
 
