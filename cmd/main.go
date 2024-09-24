@@ -8,20 +8,42 @@ import (
 	"IAM/pkg/logs"
 	"IAM/pkg/middlewares"
 	"IAM/pkg/models"
+	"crypto/tls"
+	"fmt"
 	"github.com/gin-gonic/gin"
+	"gopkg.in/gomail.v2"
 	"os"
 )
 
 func init() {
 	debugMode := os.Getenv("DEBUG_MODE") == "true"
-	logs.InitLoggers(debugMode)
+	logs.InitCodeLoggers(debugMode)
+	logs.InitFileLoggers()
 	initializers.LoadEnvVariables()
-	initializers.InitLogrus()
+}
+func SendEmail() error {
+	mailer := gomail.NewMessage()
+	mailer.SetHeader("From", "kukuruza774@gmail.com")
+	mailer.SetHeader("To", "recipient-email@example.com")
+	mailer.SetHeader("Subject", "Test Email")
+	mailer.SetBody("text/plain", "This is a test email")
+
+	dialer := gomail.NewDialer("smtp.gmail.com", 587, "your-email@gmail.com", "your-app-password")
+	dialer.TLSConfig = &tls.Config{InsecureSkipVerify: true}
+
+	if err := dialer.DialAndSend(mailer); err != nil {
+		return fmt.Errorf("could not send email: %v", err)
+	}
+
+	return nil
 }
 func main() {
+	if err := SendEmail(); err != nil {
+		fmt.Println("Failed to send email:", err)
+	} else {
+		fmt.Println("Email sent successfully!")
+	}
 	initializers.InitRedis()
-	initializers.Lgrs.Info("This is an info log")
-
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
 
@@ -50,6 +72,8 @@ func main() {
 	}
 	err := router.Run()
 	if err != nil {
-		logs.Error.Fatalf("error run server %v", err)
+		logs.ErrorLogger.Errorf("error running server %v", err)
+		logs.Error.Fatalf("error running server %v", err)
 	}
+
 }

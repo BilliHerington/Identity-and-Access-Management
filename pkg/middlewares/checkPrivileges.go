@@ -23,6 +23,7 @@ func CheckPrivileges(requiredPrivilege string) gin.HandlerFunc {
 		role, err := initializers.Rdb.HGet(ctx, "user:"+userID, "role").Result()
 		if err != nil {
 			logs.Error.Println(err)
+			logs.ErrorLogger.Error(err.Error())
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			c.Abort()
 			return
@@ -31,6 +32,7 @@ func CheckPrivileges(requiredPrivilege string) gin.HandlerFunc {
 		data, err := initializers.Rdb.HGet(ctx, "role:"+role, "privileges").Result()
 		if err != nil {
 			logs.Error.Println(err)
+			logs.ErrorLogger.Error(err.Error())
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			c.Abort()
 			return
@@ -39,6 +41,7 @@ func CheckPrivileges(requiredPrivilege string) gin.HandlerFunc {
 		err = json.Unmarshal([]byte(data), &privileges)
 		if err != nil {
 			logs.Error.Println(err)
+			logs.ErrorLogger.Error(err.Error())
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			c.Abort()
 			return

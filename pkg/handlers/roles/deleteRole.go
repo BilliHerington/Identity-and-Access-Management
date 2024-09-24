@@ -15,6 +15,7 @@ func DeleteRole(c *gin.Context) {
 	var input models.DeleteRoleData
 	if err := c.ShouldBindJSON(&input); err != nil {
 		logs.Error.Print(err)
+		logs.ErrorLogger.Error(err.Error())
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -22,12 +23,14 @@ func DeleteRole(c *gin.Context) {
 	err := rdb.SRem(ctx, "roles", role).Err()
 	if err != nil {
 		logs.Error.Println(err)
+		logs.ErrorLogger.Error(err.Error())
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 	err = rdb.Del(ctx, "role:"+role).Err()
 	if err != nil {
 		logs.Error.Println(err)
+		logs.ErrorLogger.Error(err.Error())
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

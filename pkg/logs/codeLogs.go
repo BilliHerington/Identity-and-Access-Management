@@ -13,7 +13,7 @@ var (
 	Debug *log.Logger // Новый логгер для отладочных сообщений
 )
 
-func InitLoggers(debugMode bool) {
+func InitCodeLoggers(debugMode bool) {
 	color.NoColor = false // Отключаем автоматическое определение поддержки цвета
 
 	infoColor := color.New(color.FgCyan).SprintFunc()

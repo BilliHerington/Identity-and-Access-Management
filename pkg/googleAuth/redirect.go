@@ -12,6 +12,7 @@ func OauthRedirect(c *gin.Context) {
 	config, err := initializers.LoadCredentials()
 	if err != nil {
 		logs.Error.Println(err)
+		logs.ErrorLogger.Error(err.Error())
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

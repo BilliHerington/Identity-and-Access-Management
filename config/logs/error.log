@@ -1,0 +1,13 @@
+
+time="18:25:39 | 23.09.24" level=error msg="error message"
+time="18:26:15 | 23.09.24" level=error msg="error message"
+time="18:30:42 | 23.09.24" level=error msg="error message"
+time="18:57:44 | 23.09.24" level=error msg="error message"
+time="18:57:49 | 23.09.24" level=error msg="redis: nil"
+time="19:01:37 | 23.09.24" level=error msg="error message"
+time="19:01:43 | 23.09.24" level=error msg="redis: nil"
+time="19:10:25 | 23.09.24" level=error msg="error message"
+time="19:11:13 | 23.09.24" level=error msg="error message"
+time="19:11:18 | 23.09.24" level=error msg="redis: nil"
+time="19:13:41 | 23.09.24" level=error msg="error message" func=main.main file="D:/iam-from-mac/IAM/cmd/main.go:23"
+time="12:52:55 | 24.09.24" level=error msg="failed to exchange code for token: oauth2: \"invalid_grant\" \"Bad Request\"" func=IAM/pkg/googleAuth.GoogleLogin file="D:/iam-from-mac/IAM/pkg/googleAuth/googleLogin.go:28"

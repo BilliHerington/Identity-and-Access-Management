@@ -9,7 +9,6 @@ import (
 	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v8"
-	"log"
 	"net/http"
 )
 
@@ -17,6 +16,7 @@ func CreateRole(c *gin.Context) {
 	var input models.RolesData
 	if err := c.ShouldBindJSON(&input); err != nil {
 		logs.Error.Println(err)
+		logs.ErrorLogger.Error(err.Error())
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -25,6 +25,7 @@ func CreateRole(c *gin.Context) {
 	match, err := handlers.RoleMatch(roleKey)
 	if err != nil {
 		logs.Error.Println(err)
+		logs.ErrorLogger.Error(err.Error())
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	} else if match {
@@ -34,8 +35,9 @@ func CreateRole(c *gin.Context) {
 
 	privilegesJSON, err := json.Marshal(input.Privileges)
 	if err != nil {
+		logs.Error.Println(err)
+		logs.ErrorLogger.Error(err.Error())
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		log.Println("Error serializing privileges:", err)
 		return
 	}
 	ctx := context.Background()
@@ -52,6 +54,7 @@ func CreateRole(c *gin.Context) {
 	}, roleKey)
 	if err != nil {
 		logs.Error.Println(err)
+		logs.ErrorLogger.Error(err.Error())
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

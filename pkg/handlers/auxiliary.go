@@ -31,6 +31,7 @@ func GetUserIDByEmail(ctx context.Context, email string) (string, error) {
 			return "", fmt.Errorf("email %s not found", email)
 		}
 		logs.Error.Println(err)
+		logs.ErrorLogger.Error(err.Error())
 		return "", err
 	}
 	return userID, nil
@@ -38,7 +39,6 @@ func GetUserIDByEmail(ctx context.Context, email string) (string, error) {
 func RoleMatch(roleKey string) (bool, error) {
 	ctx := context.Background()
 	res, err := initializers.Rdb.HGetAll(ctx, roleKey).Result()
-	logs.Info.Printf("res:%s\n restype:%T\n err:%v\n", res, res, err)
 	if err != nil {
 		return true, err
 	}

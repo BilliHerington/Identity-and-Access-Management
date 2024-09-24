@@ -12,6 +12,7 @@ func UpdateJWT(c *gin.Context, id string, email string) {
 	signedToken, err := CreateJWT(c, email)
 	if err != nil {
 		logs.Error.Println(err)
+		logs.ErrorLogger.Error(err.Error())
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -19,6 +20,7 @@ func UpdateJWT(c *gin.Context, id string, email string) {
 	err = initializers.Rdb.HSet(ctx, "user:"+id, "jwt", signedToken).Err()
 	if err != nil {
 		logs.Error.Println(err)
+		logs.ErrorLogger.Error(err.Error())
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

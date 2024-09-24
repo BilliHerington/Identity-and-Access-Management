@@ -14,7 +14,8 @@ func GetAllUsersData(c *gin.Context) {
 	// Получение всех id пользователей
 	IDs, err := initializers.Rdb.SMembers(ctx, "users").Result()
 	if err != nil {
-		logs.Error.Println(err.Error())
+		logs.Error.Println(err)
+		logs.ErrorLogger.Error(err.Error())
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -23,7 +24,8 @@ func GetAllUsersData(c *gin.Context) {
 	for _, id := range IDs {
 		userData, err := initializers.Rdb.HGetAll(ctx, "user:"+id).Result()
 		if err != nil {
-			logs.Error.Println(err.Error())
+			logs.Error.Println(err)
+			logs.ErrorLogger.Error(err.Error())
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
