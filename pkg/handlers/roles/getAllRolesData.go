@@ -13,6 +13,7 @@ func GetAllRolesData(c *gin.Context) {
 	roleNames, err := initializers.Rdb.SMembers(ctx, "roles").Result()
 	if err != nil {
 		logs.Error.Println(err)
+		logs.ErrorLogger.Error(err.Error())
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -22,6 +23,7 @@ func GetAllRolesData(c *gin.Context) {
 		roleData, err := initializers.Rdb.HGetAll(ctx, "role:"+roleName).Result()
 		if err != nil {
 			logs.Error.Println(err)
+			logs.ErrorLogger.Error(err.Error())
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}

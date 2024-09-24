@@ -16,6 +16,7 @@ func AuthMiddleware() gin.HandlerFunc {
 		tokenString, err := jwtHandlers.ExtractHeaderToken(c)
 		if err != nil {
 			logs.Error.Printf("No token found :%s", tokenString)
+			logs.ErrorLogger.Error(err.Error())
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "No token provided"})
 			c.Abort()
 			return
@@ -28,6 +29,7 @@ func AuthMiddleware() gin.HandlerFunc {
 		})
 		if err != nil {
 			logs.Error.Println(err)
+			logs.ErrorLogger.Error(err.Error())
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
 			c.Abort()
 			return
@@ -35,6 +37,7 @@ func AuthMiddleware() gin.HandlerFunc {
 		// Шаг 4: Если токен недействителен или произошла ошибка, возвращаем ошибку
 		if !token.Valid {
 			logs.Error.Println(err)
+			logs.ErrorLogger.Error(err.Error())
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
 			c.Abort() // Прерываем выполнение запроса
 			return

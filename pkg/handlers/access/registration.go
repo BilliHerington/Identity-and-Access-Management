@@ -16,17 +16,19 @@ import (
 func Registration(c *gin.Context) {
 	var input models.RegisterData
 
-	// 1. Получение данных от клиента и связывание с моделью User
+	// getting data from client and binding
 	if err := c.ShouldBind(&input); err != nil {
 		logs.Error.Println(err)
+		logs.ErrorLogger.Error(err.Error())
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	// 2. Проверка существования пользователя по email
+	// check email exist
 	emailMatch, err := handlers.EmailMatch(input.Email)
 	if err != nil {
 		logs.Error.Println(err)
+		logs.ErrorLogger.Error(err.Error())
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	} else if emailMatch {
@@ -34,19 +36,20 @@ func Registration(c *gin.Context) {
 		return
 	}
 
-	// 3. Хеширование пароля
+	// hashing pass
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
 	if err != nil {
-		logs.Error.Println(err.Error())
+		logs.Error.Println(err)
+		logs.ErrorLogger.Error(err.Error())
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 	input.Password = string(hashedPassword)
 
-	// 4. Генерация уникального ID пользователя
+	// generation ID
 	userID := uuid.New().String()[:8]
 
-	// 5. Сохранение пользователя в Redis с помощью HSet
+	// save User in Redis
 	ctx := context.Background()
 	err = initializers.Rdb.Watch(ctx, func(tx *redis.Tx) error {
 		_, err = tx.Pipelined(ctx, func(pipe redis.Pipeliner) error {
@@ -65,17 +68,18 @@ func Registration(c *gin.Context) {
 	}, "user:"+userID)
 	if err != nil {
 		logs.Error.Println(err)
+		logs.ErrorLogger.Error(err.Error())
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	//6. Добавление email в отдельный ключ для связи email -> ID пользователя
+	// add new EmailKey for User
 	err = initializers.Rdb.Set(ctx, "email:"+input.Email, userID, 0).Err()
 	if err != nil {
-		logs.Error.Println(err.Error())
+		logs.Error.Println(err)
+		logs.ErrorLogger.Error(err.Error())
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	// 7. Отправка успешного ответа
 	c.JSON(http.StatusOK, gin.H{"message": "Registration successful"})
 }

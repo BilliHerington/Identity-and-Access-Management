@@ -17,6 +17,7 @@ func DeleteUser(c *gin.Context) {
 	err := c.ShouldBindJSON(&input)
 	if err != nil {
 		logs.Error.Println(err)
+		logs.ErrorLogger.Error(err.Error())
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -25,12 +26,14 @@ func DeleteUser(c *gin.Context) {
 	email, err := rdb.HGet(ctx, "user:"+userID, "email").Result()
 	if err != nil {
 		logs.Error.Println(err)
+		logs.ErrorLogger.Error(err.Error())
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 	err = rdb.Del(ctx, "user:"+userID).Err()
 	if err != nil {
 		logs.Error.Println(err)
+		logs.ErrorLogger.Error(err.Error())
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -38,12 +41,14 @@ func DeleteUser(c *gin.Context) {
 	err = rdb.Del(ctx, "email:"+email).Err()
 	if err != nil {
 		logs.Error.Println(err)
+		logs.ErrorLogger.Error(err.Error())
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 	err = rdb.SRem(ctx, "users", userID).Err()
 	if err != nil {
 		logs.Error.Println(err)
+		logs.ErrorLogger.Error(err.Error())
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

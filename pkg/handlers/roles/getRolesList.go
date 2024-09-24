@@ -13,6 +13,7 @@ func GetRolesList(c *gin.Context) {
 	roles, err := initializers.Rdb.SMembers(ctx, "roles").Result()
 	if err != nil {
 		logs.Error.Println(err)
+		logs.ErrorLogger.Error(err.Error())
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

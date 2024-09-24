@@ -30,6 +30,6 @@ func GetUserInfo(token *oauth2.Token, config *oauth2.Config) (*people.Person, er
 		return nil, fmt.Errorf("email not found")
 	}
 
-	logs.Info.Println("User email:", person.EmailAddresses[0].Value)
+	//logs.Info.Println("User email:", person.EmailAddresses[0].Value)
 	return person, nil
 }

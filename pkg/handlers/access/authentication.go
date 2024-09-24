@@ -17,12 +17,14 @@ func Authenticate(c *gin.Context) {
 	// 1. Получение данных от клиента и связывание с моделью User
 	if err := c.ShouldBind(&input); err != nil {
 		logs.Error.Println(err)
+		logs.ErrorLogger.Error(err.Error())
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 	emailMatch, err := handlers.EmailMatch(input.Email)
 	if err != nil {
 		logs.Error.Println(err)
+		logs.ErrorLogger.Error(err.Error())
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	} else if !emailMatch {
@@ -32,12 +34,14 @@ func Authenticate(c *gin.Context) {
 	id, err := handlers.GetUserIDByEmail(c, input.Email)
 	if err != nil {
 		logs.Error.Println(err)
+		logs.ErrorLogger.Error(err.Error())
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 	pass, err := initializers.Rdb.HGet(c, "user:"+id, "password").Result()
 	if err != nil {
 		logs.Error.Println(err)
+		logs.ErrorLogger.Error(err.Error())
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -46,6 +50,7 @@ func Authenticate(c *gin.Context) {
 	err = bcrypt.CompareHashAndPassword([]byte(pass), []byte(input.Password))
 	if err != nil {
 		logs.Error.Println(err.Error())
+		logs.ErrorLogger.Error(err.Error())
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

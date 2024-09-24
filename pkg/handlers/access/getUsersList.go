@@ -14,7 +14,8 @@ func GetUsersList(c *gin.Context) {
 	// Получение всех email-ов пользователей
 	users, err := initializers.Rdb.SMembers(ctx, "users").Result()
 	if err != nil {
-		logs.Error.Println(err.Error())
+		logs.Error.Println(err)
+		logs.ErrorLogger.Error(err.Error())
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
