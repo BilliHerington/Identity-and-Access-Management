@@ -36,7 +36,6 @@ func InitFileLoggers() {
 		MaxAge:     30,
 		Compress:   true,
 	}
-	AuditLogger.SetReportCaller(true)
 	AuditLogger.SetOutput(auditFile)
 	AuditLogger.SetFormatter(&logrus.TextFormatter{
 		FullTimestamp:   true,

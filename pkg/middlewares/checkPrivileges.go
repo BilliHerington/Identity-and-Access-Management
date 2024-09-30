@@ -1,18 +1,18 @@
 package middlewares
 
 import (
-	"IAM/initializers"
 	"IAM/pkg/logs"
 	"context"
 	"encoding/json"
 	"github.com/gin-gonic/gin"
+	"github.com/go-redis/redis/v8"
 	"net/http"
 )
 
-func CheckPrivileges(requiredPrivilege string) gin.HandlerFunc {
+func CheckPrivileges(requiredPrivilege string, rdb *redis.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		// get userID from header
 		userID := c.GetString("userID")
-		//logs.Info.Println("userID :" + userID)
 		if userID == "" {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
 			c.Abort()
@@ -20,7 +20,8 @@ func CheckPrivileges(requiredPrivilege string) gin.HandlerFunc {
 		}
 
 		ctx := context.Background()
-		role, err := initializers.Rdb.HGet(ctx, "user:"+userID, "role").Result()
+		// get user role from redis
+		role, err := rdb.HGet(ctx, "user:"+userID, "role").Result()
 		if err != nil {
 			logs.Error.Println(err)
 			logs.ErrorLogger.Error(err.Error())
@@ -28,8 +29,8 @@ func CheckPrivileges(requiredPrivilege string) gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-
-		data, err := initializers.Rdb.HGet(ctx, "role:"+role, "privileges").Result()
+		// get privileges by role
+		data, err := rdb.HGet(ctx, "role:"+role, "privileges").Result()
 		if err != nil {
 			logs.Error.Println(err)
 			logs.ErrorLogger.Error(err.Error())
@@ -37,6 +38,7 @@ func CheckPrivileges(requiredPrivilege string) gin.HandlerFunc {
 			c.Abort()
 			return
 		}
+		// unmarshal privileges
 		var privileges []string
 		err = json.Unmarshal([]byte(data), &privileges)
 		if err != nil {
@@ -46,7 +48,7 @@ func CheckPrivileges(requiredPrivilege string) gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-
+		// compare user privileges with required privileges
 		hasPrivileges := false
 		for _, privilege := range privileges {
 			if privilege == requiredPrivilege {
@@ -54,6 +56,7 @@ func CheckPrivileges(requiredPrivilege string) gin.HandlerFunc {
 				break
 			}
 		}
+		// if not match
 		if !hasPrivileges {
 			c.JSON(http.StatusForbidden, gin.H{"error": "You do not have the required privileges"})
 			c.Abort()

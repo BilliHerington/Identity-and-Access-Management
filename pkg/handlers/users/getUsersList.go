@@ -1,4 +1,4 @@
-package roles
+package users
 
 import (
 	"IAM/pkg/logs"
@@ -8,16 +8,19 @@ import (
 	"net/http"
 )
 
-func GetRolesList(rdb *redis.Client) gin.HandlerFunc {
+func GetUsersList(rdb *redis.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx := context.Background()
-		roles, err := rdb.SMembers(ctx, "roles").Result()
+
+		// get all Users from user-list in redis
+		users, err := rdb.SMembers(ctx, "users").Result()
 		if err != nil {
 			logs.Error.Println(err)
 			logs.ErrorLogger.Error(err.Error())
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		c.JSON(http.StatusOK, gin.H{"roles": roles})
+
+		c.JSON(http.StatusOK, gin.H{"data": users})
 	}
 }

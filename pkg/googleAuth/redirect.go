@@ -8,14 +8,18 @@ import (
 	"net/http"
 )
 
-func OauthRedirect(c *gin.Context) {
-	config, err := initializers.LoadCredentials()
-	if err != nil {
-		logs.Error.Println(err)
-		logs.ErrorLogger.Error(err.Error())
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
+// OauthRedirect redirecting user to URL specified in Credentials.json
+func OauthRedirect() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// getting config from Credentials.json
+		config, err := initializers.LoadCredentials()
+		if err != nil {
+			logs.Error.Println(err)
+			logs.ErrorLogger.Error(err.Error())
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		authURL := config.AuthCodeURL("state-token", oauth2.AccessTypeOffline)
+		c.Redirect(http.StatusFound, authURL)
 	}
-	authURL := config.AuthCodeURL("state-token", oauth2.AccessTypeOffline)
-	c.Redirect(http.StatusFound, authURL)
 }

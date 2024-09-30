@@ -2,15 +2,17 @@ package jwtHandlers
 
 import (
 	"IAM/initializers"
-	"IAM/pkg/handlers"
+	"IAM/pkg/handlers/auxiliary"
 	"IAM/pkg/models"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
+	"github.com/go-redis/redis/v8"
 	"time"
 )
 
-func CreateJWT(c *gin.Context, email string) (string, error) {
-	id, err := handlers.GetUserIDByEmail(c, email)
+func CreateJWT(c *gin.Context, email string, rdb *redis.Client) (string, error) {
+	// get userID from redis
+	id, err := auxiliary.GetUserIDByEmail(c, email, rdb)
 	if err != nil {
 		return "", err
 	}
@@ -26,7 +28,7 @@ func CreateJWT(c *gin.Context, email string) (string, error) {
 	// Generate JWT token
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
-	// Подписываем токен с использованием секретного ключа
+	// sign token with secret key
 	signedToken, err := token.SignedString(initializers.JwtSecretKey)
 	if err != nil {
 		return "", err

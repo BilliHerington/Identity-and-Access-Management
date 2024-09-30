@@ -5,12 +5,12 @@ import (
 )
 
 type RegisterData struct {
-	//	ID       string `json:"id" binding:"required"`          // Уникальный идентификатор пользователя, обязательно
-	Name     string `json:"name"`                           // Имя пользователя
-	Email    string `json:"email" binding:"required,email"` // Email пользователя, обязательно и должен быть валидным email
-	Password string `json:"password" binding:"required"`    // Пароль, обязательно
-	Role     string `json:"role"`
-	JWT      string `json:"jwtHandlers"`
+	Name             string `json:"name"`
+	Email            string `json:"email" binding:"required,email"`
+	VerificationCode string `json:"verificationCode"`
+	Password         string `json:"password" binding:"required"`
+	Role             string `json:"role"`
+	JWT              string `json:"jwtHandlers"`
 }
 
 type AuthData struct {
@@ -18,13 +18,13 @@ type AuthData struct {
 	Password string `json:"password" binding:"required"`
 }
 
-// RolesData структура для хранения ролей и их привилегий
+// RolesData struct for data about Roles and Privileges
 type RolesData struct {
-	Name       string   `json:"name" binding:"required"`
+	RoleName   string   `json:"role_name" binding:"required"`
 	Privileges []string `json:"privileges" binding:"required"`
 }
 
-// UserRoleData структура для хранения информации о ролях пользователей
+// UserRoleData struct for data about Users and Roles
 type UserRoleData struct {
 	Email string `json:"email" binding:"required,email"`
 	Role  string `json:"role" binding:"required"`
@@ -33,14 +33,12 @@ type Claims struct {
 	UserID string `json:"user_id"`
 	jwt.StandardClaims
 }
-type DeleteUserData struct {
-	UserID string `json:"user_id"`
+type ResetPass struct {
+	Email         string `json:"email"`
+	ResetPassCode string `json:"resetPassCode"`
+	NewPassword   string `json:"newPassword"`
 }
-type DeleteRoleData struct {
-	Name string `json:"name"`
-}
-
-type PrivilegeData struct {
+type AdminPrivilegeData struct {
 	// -----Admin Privileges-----
 	DeleteUser      string
 	RedactUser      string
@@ -52,35 +50,35 @@ type PrivilegeData struct {
 	AccessLogs      string
 	AccessAnalytics string
 
-	// -----Project Manager Privileges-----
-	CreateProject string
-	ManageProject string
-	AssignTasks   string
-	ViewReports   string
-	ViewUsers     string
-
-	// -----Developer Privileges-----
-	AccessProjects string
-	CommitCode     string
-	ManageTasks    string
-	ViewTeamData   string
-
-	// -----QA Tester Privileges-----
-	AccessTestProjects string
-	ReportBugs         string
-	EditBugs           string
-	ViewTestTasks      string
-
-	// -----Support Privileges-----
-	HandleTickets string
-	ViewUserInfo  string
-
-	// -----User Privileges-----
-	AccessResources    string
-	InteractWithSystem string
+	//// -----Project Manager Privileges-----
+	//CreateProject string
+	//ManageProject string
+	//AssignTasks   string
+	//ViewReports   string
+	//ViewUsers     string
+	//
+	//// -----Developer Privileges-----
+	//AccessProjects string
+	//CommitCode     string
+	//ManageTasks    string
+	//ViewTeamData   string
+	//
+	//// -----QA Tester Privileges-----
+	//AccessTestProjects string
+	//ReportBugs         string
+	//EditBugs           string
+	//ViewTestTasks      string
+	//
+	//// -----Support Privileges-----
+	//HandleTickets string
+	//ViewUserInfo  string
+	//
+	//// -----User Privileges-----
+	//AccessResources    string
+	//InteractWithSystem string
 }
 
-var Privileges = PrivilegeData{
+var AdminPrivileges = AdminPrivilegeData{
 	// -----Admin Privileges-----
 	DeleteUser:      "deleteUser",
 	RedactUser:      "redactUser",
@@ -91,31 +89,41 @@ var Privileges = PrivilegeData{
 	AccessSystem:    "accessSystem",
 	AccessLogs:      "accessLogs",
 	AccessAnalytics: "accessAnalytics",
+	//
+	//// -----Project Manager Privileges-----
+	//CreateProject: "createProject",
+	//ManageProject: "manageProject",
+	//AssignTasks:   "assignTasks",
+	//ViewReports:   "viewReports",
+	//ViewUsers:     "viewUsers",
+	//
+	//// -----Developer Privileges-----
+	//AccessProjects: "accessProjects",
+	//CommitCode:     "commitCode",
+	//ManageTasks:    "manageTasks",
+	//ViewTeamData:   "viewTeamData",
+	//
+	//// -----QA Tester Privileges-----
+	//AccessTestProjects: "accessTestProjects",
+	//ReportBugs:         "reportBugs",
+	//EditBugs:           "editBugs",
+	//ViewTestTasks:      "viewTestTasks",
+	//
+	//// -----Support Privileges-----
+	//HandleTickets: "handleTickets",
+	//ViewUserInfo:  "viewUserInfo",
+	//
+	//// -----User Privileges-----
+	//AccessResources:    "accessResources",
+	//InteractWithSystem: "interactWithSystem",
+}
 
-	// -----Project Manager Privileges-----
-	CreateProject: "createProject",
-	ManageProject: "manageProject",
-	AssignTasks:   "assignTasks",
-	ViewReports:   "viewReports",
-	ViewUsers:     "viewUsers",
+type UserPrivilegeData struct {
+	AccessResources    string
+	InteractWithSystem string
+}
 
-	// -----Developer Privileges-----
-	AccessProjects: "accessProjects",
-	CommitCode:     "commitCode",
-	ManageTasks:    "manageTasks",
-	ViewTeamData:   "viewTeamData",
-
-	// -----QA Tester Privileges-----
-	AccessTestProjects: "accessTestProjects",
-	ReportBugs:         "reportBugs",
-	EditBugs:           "editBugs",
-	ViewTestTasks:      "viewTestTasks",
-
-	// -----Support Privileges-----
-	HandleTickets: "handleTickets",
-	ViewUserInfo:  "viewUserInfo",
-
-	// -----User Privileges-----
+var UserPrivileges = UserPrivilegeData{
 	AccessResources:    "accessResources",
 	InteractWithSystem: "interactWithSystem",
 }

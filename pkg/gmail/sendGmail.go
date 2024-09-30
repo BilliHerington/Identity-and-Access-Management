@@ -10,8 +10,8 @@ import (
 	"strings"
 )
 
-// SendEmail sends an email using Gmail API
-func SendEmail(token *oauth2.Token, config *oauth2.Config, to, subject, body string) error {
+// SendGmail sends an email using Gmail API
+func SendGmail(token *oauth2.Token, config *oauth2.Config, to, subject, body string) error {
 	client := config.Client(context.Background(), token)
 	srv, err := gmail.NewService(context.Background(), option.WithHTTPClient(client))
 	if err != nil {

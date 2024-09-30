@@ -12,7 +12,7 @@ import (
 
 func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-
+		// extract token from header
 		tokenString, err := jwtHandlers.ExtractHeaderToken(c)
 		if err != nil {
 			logs.Error.Printf("No token found :%s", tokenString)
@@ -21,10 +21,10 @@ func AuthMiddleware() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
+		// use custom claims with user_id
 		claims := &models.Claims{}
 
 		token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
-			//logs.Info.Print(claims)
 			return initializers.JwtSecretKey, nil
 		})
 		if err != nil {
@@ -34,18 +34,16 @@ func AuthMiddleware() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-		// Шаг 4: Если токен недействителен или произошла ошибка, возвращаем ошибку
+		// check token valid
 		if !token.Valid {
 			logs.Error.Println(err)
 			logs.ErrorLogger.Error(err.Error())
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
-			c.Abort() // Прерываем выполнение запроса
+			c.Abort()
 			return
 		}
 		userID := claims.UserID
-		//logs.Info.Printf("userID:%s", userID)
 		c.Set("userID", userID)
-		// Шаг 5: Если токен валиден, продолжаем выполнение запроса
 		c.Next()
 	}
 }

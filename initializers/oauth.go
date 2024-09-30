@@ -10,7 +10,6 @@ import (
 )
 
 func LoadCredentials() (*oauth2.Config, error) {
-	// Открытие файла с учетными данными
 	file, err := os.Open("config/credentials.json")
 	if err != nil {
 		return nil, fmt.Errorf("failed to open credentials file: %w", err)
@@ -22,13 +21,11 @@ func LoadCredentials() (*oauth2.Config, error) {
 		}
 	}()
 
-	// Чтение содержимого файла
 	fileBytes, err := io.ReadAll(file)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read credentials file: %w", err)
 	}
 
-	// Задаем необходимые scopes для работы с Gmail API
 	scopes := []string{
 		"https://www.googleapis.com/auth/userinfo.email",
 		"https://www.googleapis.com/auth/userinfo.profile",
@@ -37,7 +34,6 @@ func LoadCredentials() (*oauth2.Config, error) {
 		"https://mail.google.com/",
 	}
 
-	// Конфигурируем OAuth2 клиента на основе credentials.json
 	config, err := google.ConfigFromJSON(fileBytes, scopes...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse credentials file: %w", err)
