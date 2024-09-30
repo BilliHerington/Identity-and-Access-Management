@@ -1,15 +1,16 @@
 package jwtHandlers
 
 import (
-	"IAM/initializers"
 	"IAM/pkg/logs"
 	"context"
 	"github.com/gin-gonic/gin"
+	"github.com/go-redis/redis/v8"
 	"net/http"
 )
 
-func UpdateJWT(c *gin.Context, id string, email string) {
-	signedToken, err := CreateJWT(c, email)
+func UpdateJWT(c *gin.Context, id string, email string, rdb *redis.Client) {
+	// sign token
+	signedToken, err := CreateJWT(c, email, rdb)
 	if err != nil {
 		logs.Error.Println(err)
 		logs.ErrorLogger.Error(err.Error())
@@ -17,7 +18,8 @@ func UpdateJWT(c *gin.Context, id string, email string) {
 		return
 	}
 	ctx := context.Background()
-	err = initializers.Rdb.HSet(ctx, "user:"+id, "jwt", signedToken).Err()
+	// save new JWT in redis
+	err = rdb.HSet(ctx, "user:"+id, "jwt", signedToken).Err()
 	if err != nil {
 		logs.Error.Println(err)
 		logs.ErrorLogger.Error(err.Error())

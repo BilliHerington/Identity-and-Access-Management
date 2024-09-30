@@ -11,25 +11,27 @@ import (
 
 // GetUserInfo using token for given info about user from Google People API
 func GetUserInfo(token *oauth2.Token, config *oauth2.Config) (*people.Person, error) {
-	client := config.Client(context.Background(), token) // создание HTTP-клиента с токеном доступа
 	ctx := context.Background()
-	srv, err := people.NewService(ctx, option.WithHTTPClient(client)) // создание клиента для работы с Google People API
+
+	// create HTTP-client with access token
+	client := config.Client(context.Background(), token)
+
+	// create client for working with Google People API
+	srv, err := people.NewService(ctx, option.WithHTTPClient(client))
 	if err != nil {
 		return nil, fmt.Errorf("unable to create people client: %v", err)
 	}
 
-	// запрос к API для получения информации о пользователе
+	// request to API for getting user info
 	person, err := srv.People.Get("people/me").PersonFields("names,emailAddresses").Do()
 	if err != nil {
 		return nil, fmt.Errorf("unable to get people: %v", err)
 	}
 
-	// Логирование информации об электронной почте
 	if len(person.EmailAddresses) == 0 {
 		logs.Error.Println("Email not found in user info")
 		return nil, fmt.Errorf("email not found")
 	}
 
-	//logs.Info.Println("User email:", person.EmailAddresses[0].Value)
 	return person, nil
 }
