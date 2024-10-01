@@ -1,8 +1,8 @@
 package users
 
 import (
-	"IAM/pkg/gmail"
 	"IAM/pkg/handlers/auxiliary"
+	"IAM/pkg/handlers/gmail"
 	"IAM/pkg/logs"
 	"IAM/pkg/models"
 	"context"
@@ -26,7 +26,7 @@ func StartRegistration(rdb *redis.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// get data from client and binding with JSON
 		var input struct {
-			Email string `json:"email"`
+			Email string `json:"email" binding:"required, email"`
 		}
 		if err := c.ShouldBind(&input); err != nil {
 			logs.Error.Println(err)
@@ -110,6 +110,16 @@ func ApproveRegistration(rdb *redis.Client) gin.HandlerFunc {
 			return
 		}
 
+		// check valid data
+		passValid, msg := models.ValidPassword(input.Password)
+		if !passValid {
+			c.JSON(http.StatusBadRequest, gin.H{"error": msg})
+		}
+		nameValid, msg := models.ValidName(input.Name)
+		if !nameValid {
+			c.JSON(http.StatusBadRequest, gin.H{"error": msg})
+		}
+
 		// get id from redis
 		userID, err := auxiliary.GetUserIDByEmail(ctx, input.Email, rdb)
 		if err != nil {
@@ -143,28 +153,18 @@ func ApproveRegistration(rdb *redis.Client) gin.HandlerFunc {
 			}
 			input.Password = string(hashedPassword)
 
+			// create userVersion
+			userVersion := uuid.New().String()
+
 			// save User in Redis
-			err = rdb.Watch(ctx, func(tx *redis.Tx) error {
-				_, err = tx.Pipelined(ctx, func(pipe redis.Pipeliner) error {
-					pipe.HMSet(ctx, "user:"+userID, map[string]interface{}{
-						"id":       userID,
-						"email":    input.Email,
-						"name":     input.Name,
-						"password": input.Password,
-						"role":     input.Role,
-						"jwt":      input.JWT,
-					})
-					pipe.SAdd(ctx, "users", userID)
-					return nil
-				})
-				return err
-			}, "user:"+userID)
+			err = auxiliary.RegistrationOrganizeHandler(rdb, ctx, userID, input.Email, input.Password, input.Name, "user", "", userVersion)
 			if err != nil {
 				logs.Error.Println(err)
 				logs.ErrorLogger.Error(err.Error())
 				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 				return
 			}
+
 			// delete verificationCode field
 			err = rdb.HDel(ctx, "user:"+userID, "verificationCode").Err()
 			if err != nil {

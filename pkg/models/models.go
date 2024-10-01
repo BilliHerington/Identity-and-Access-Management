@@ -20,7 +20,7 @@ type AuthData struct {
 
 // RolesData struct for data about Roles and Privileges
 type RolesData struct {
-	RoleName   string   `json:"role_name" binding:"required"`
+	RoleName   string   `json:"roleName" binding:"required"`
 	Privileges []string `json:"privileges" binding:"required"`
 }
 
@@ -30,13 +30,14 @@ type UserRoleData struct {
 	Role  string `json:"role" binding:"required"`
 }
 type Claims struct {
-	UserID string `json:"user_id"`
+	UserID      string `json:"userID" binding:"required"`
+	UserVersion string `json:"userVersion" binding:"required"`
 	jwt.StandardClaims
 }
 type ResetPass struct {
-	Email         string `json:"email"`
-	ResetPassCode string `json:"resetPassCode"`
-	NewPassword   string `json:"newPassword"`
+	Email         string `json:"email" binding:"required"`
+	ResetPassCode string `json:"resetPassCode" binding:"required"`
+	NewPassword   string `json:"newPassword" binding:"required"`
 }
 type AdminPrivilegeData struct {
 	// -----Admin Privileges-----
