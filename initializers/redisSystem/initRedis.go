@@ -1,11 +1,13 @@
-package initializers
+package redisDB
 
 import (
+	"IAM/initializers"
 	"IAM/pkg/logs"
 	"IAM/pkg/models"
 	"context"
 	"encoding/json"
 	"github.com/go-redis/redis/v8"
+	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 	"os"
 	"reflect"
@@ -18,7 +20,7 @@ import (
 //)
 
 func InitRedis() (*redis.Client, error) {
-	LoadEnvVariables()
+	initializers.LoadEnvVariables()
 	ctx := context.Background()
 	addr := os.Getenv("REDIS_ADDR")
 	password := os.Getenv("REDIS_PASSWORD")
@@ -35,12 +37,10 @@ func InitRedis() (*redis.Client, error) {
 	_, err = rdb.Ping(ctx).Result()
 	if err != nil {
 		logs.ErrorLogger.Error(err)
-		logs.Error.Fatalf("redis ping failed: %v", err)
+		logs.Error.Fatalf("redisSystem ping failed: %v", err)
 	}
 	InitializeRoles(rdb)
 	InitializeAdmin(rdb)
-	logs.AuditLogger.Println("redis initialize success")
-	logs.Info.Println("redis initialize success")
 	return rdb, nil
 }
 
@@ -59,7 +59,7 @@ func InitializeRoles(rdb *redis.Client) {
 	adminRes, err := rdb.HGetAll(ctx, adminRoleKey).Result()
 	if err != nil {
 		logs.ErrorLogger.Error(err.Error())
-		logs.Error.Fatalf("redis HGetAll failed: %v", err)
+		logs.Error.Fatalf("redisSystem HGetAll failed: %v", err)
 	} else if len(adminRes) == 0 {
 		adminMatch = false
 	} else {
@@ -69,7 +69,7 @@ func InitializeRoles(rdb *redis.Client) {
 	userRes, err := rdb.HGetAll(ctx, userRoleKey).Result()
 	if err != nil {
 		logs.ErrorLogger.Error(err.Error())
-		logs.Error.Fatalf("redis HGetAll failed: %v", err)
+		logs.Error.Fatalf("redisSystem HGetAll failed: %v", err)
 	} else if len(userRes) == 0 {
 		userMatch = false
 	} else {
@@ -133,13 +133,14 @@ func InitializeRoles(rdb *redis.Client) {
 func InitializeAdmin(rdb *redis.Client) {
 	ctx := context.Background()
 
-	userID := "MAIN_ADMIN"
-	adminMail := os.Getenv("MAIN_ADMIN_EMAIL")
-	adminPassword := os.Getenv("MAIN_ADMIN_PASSWORD")
+	userID := "ROOT"
+	adminMail := os.Getenv("ROOT_EMAIL")
+	adminPassword := os.Getenv("ROOT_PASSWORD")
+	name := "ROOT"
 	res, err := rdb.HGetAll(ctx, "user:"+userID).Result()
 	if err != nil {
 		logs.ErrorLogger.Error(err.Error())
-		logs.Error.Fatalf("redis HGetAll failed: %v", err)
+		logs.Error.Fatalf("redisSystem HGetAll failed: %v", err)
 	}
 	if len(res) == 0 {
 		// hashing pass
@@ -149,18 +150,22 @@ func InitializeAdmin(rdb *redis.Client) {
 			logs.Error.Fatal(err)
 		}
 		adminPassword = string(hashedPassword)
+
+		// creating userVersion
+		userVersion := uuid.New().String()
+
 		err = rdb.Watch(ctx, func(tx *redis.Tx) error {
-			_, err = tx.Pipelined(ctx, func(pipe redis.Pipeliner) error {
+			_, err := tx.Pipelined(ctx, func(pipe redis.Pipeliner) error {
 				pipe.HMSet(ctx, "user:"+userID, map[string]interface{}{
-					"id":       userID,
-					"email":    adminMail,
-					"name":     "ADMIN",
-					"password": adminPassword,
-					"role":     "admin",
-					"jwt":      "",
+					"id":          userID,
+					"email":       adminMail,
+					"name":        name,
+					"password":    adminPassword,
+					"role":        "admin",
+					"jwt":         "",
+					"userVersion": userVersion,
 				})
 				pipe.SAdd(ctx, "users", userID)
-
 				return nil
 			})
 			return err
@@ -175,8 +180,7 @@ func InitializeAdmin(rdb *redis.Client) {
 			logs.Error.Println(err)
 			logs.ErrorLogger.Error(err.Error())
 		}
-		logs.AuditLogger.Printf("admin created successfully: %s", adminMail)
-		logs.Info.Printf("admin created successfully: %s", adminMail)
+		logs.AuditLogger.Printf("ROOT created successfully: %s", adminMail)
+		logs.Info.Printf("ROOT created successfully: %s", adminMail)
 	}
-
 }

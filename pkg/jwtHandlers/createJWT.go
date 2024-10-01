@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-func CreateJWT(c *gin.Context, email string, rdb *redis.Client) (string, error) {
+func CreateJWT(c *gin.Context, email string, userVersion string, rdb *redis.Client) (string, error) {
 	// get userID from redis
 	id, err := auxiliary.GetUserIDByEmail(c, email, rdb)
 	if err != nil {
@@ -19,7 +19,8 @@ func CreateJWT(c *gin.Context, email string, rdb *redis.Client) (string, error) 
 
 	expirationTime := time.Now().Add(time.Hour * 24)
 	claims := models.Claims{
-		UserID: id,
+		UserID:      id,
+		UserVersion: userVersion,
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: expirationTime.Unix(),
 		},

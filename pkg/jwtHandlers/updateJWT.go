@@ -8,9 +8,9 @@ import (
 	"net/http"
 )
 
-func UpdateJWT(c *gin.Context, id string, email string, rdb *redis.Client) {
+func UpdateJWT(c *gin.Context, userID, userVersion, email string, rdb *redis.Client) {
 	// sign token
-	signedToken, err := CreateJWT(c, email, rdb)
+	signedToken, err := CreateJWT(c, email, userVersion, rdb)
 	if err != nil {
 		logs.Error.Println(err)
 		logs.ErrorLogger.Error(err.Error())
@@ -19,7 +19,7 @@ func UpdateJWT(c *gin.Context, id string, email string, rdb *redis.Client) {
 	}
 	ctx := context.Background()
 	// save new JWT in redis
-	err = rdb.HSet(ctx, "user:"+id, "jwt", signedToken).Err()
+	err = rdb.HSet(ctx, "user:"+userID, "jwt", signedToken).Err()
 	if err != nil {
 		logs.Error.Println(err)
 		logs.ErrorLogger.Error(err.Error())

@@ -1,14 +1,15 @@
 package users
 
 import (
-	"IAM/pkg/gmail"
 	"IAM/pkg/handlers/auxiliary"
+	"IAM/pkg/handlers/gmail"
 	"IAM/pkg/logs"
 	"IAM/pkg/models"
 	"context"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v8"
+	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 	"net/http"
 )
@@ -56,6 +57,7 @@ func StartResetPassword(rdb *redis.Client) gin.HandlerFunc {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err})
 			return
 		}
+
 		// get userID from redis
 		userID, err := auxiliary.GetUserIDByEmail(ctx, input.Email, rdb)
 		if err != nil {
@@ -64,6 +66,7 @@ func StartResetPassword(rdb *redis.Client) gin.HandlerFunc {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err})
 			return
 		}
+
 		// add resetPassCode field to User in redis
 		err = rdb.HSet(ctx, "user:"+userID, map[string]interface{}{
 			"resetPassCode": resetPassCode,
@@ -92,6 +95,12 @@ func ApproveResetPassword(rdb *redis.Client) gin.HandlerFunc {
 			return
 		}
 
+		// check valid password
+		passValid, msg := models.ValidPassword(input.NewPassword)
+		if !passValid {
+			c.JSON(http.StatusBadRequest, gin.H{"error": msg})
+		}
+
 		// check email exist in redis
 		emailMatch, err := auxiliary.EmailMatch(input.Email, rdb)
 		if err != nil {
@@ -113,6 +122,7 @@ func ApproveResetPassword(rdb *redis.Client) gin.HandlerFunc {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err})
 			return
 		}
+
 		// get reset pass code from redis
 		code, err := rdb.HGet(ctx, "user:"+userID, "resetPassCode").Result()
 		if err != nil {
@@ -122,10 +132,12 @@ func ApproveResetPassword(rdb *redis.Client) gin.HandlerFunc {
 			return
 		}
 		// compare codes
+
 		if code != input.ResetPassCode {
 			c.JSON(http.StatusConflict, gin.H{"error": "Code Not Match"})
 			return
 		} else {
+
 			// hashing pass
 			hashedPassword, err := bcrypt.GenerateFromPassword([]byte(input.NewPassword), bcrypt.DefaultCost)
 			if err != nil {
@@ -136,9 +148,13 @@ func ApproveResetPassword(rdb *redis.Client) gin.HandlerFunc {
 			}
 			input.NewPassword = string(hashedPassword)
 
-			// save new pass in redis
+			// update userVersion
+			userVersion := uuid.New().String()
+
+			// save new pass and userVersion in redis
 			err = rdb.HSet(ctx, "user:"+userID, map[string]interface{}{
-				"password": input.NewPassword,
+				"password":    input.NewPassword,
+				"userVersion": userVersion,
 			}).Err()
 			if err != nil {
 				logs.ErrorLogger.Error(err)
