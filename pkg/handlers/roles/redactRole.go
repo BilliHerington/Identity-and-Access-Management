@@ -3,11 +3,15 @@ package roles
 import (
 	"IAM/pkg/logs"
 	"IAM/pkg/models"
-	"encoding/json"
+	"IAM/pkg/redisSystem/redisHandlers/redisRolesHandlers"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v8"
 	"net/http"
 )
+
+type RedactRoleRepository interface {
+	RedactRoleDB(role string, privileges []string) error
+}
 
 func RedactRole(rdb *redis.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -19,16 +23,9 @@ func RedactRole(rdb *redis.Client) gin.HandlerFunc {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		roleKey := "role:" + input.RoleName
-		marshalPrivileges, err := json.Marshal(input.Privileges)
 
-		if err != nil {
-			logs.Error.Println(err)
-			logs.ErrorLogger.Error(err.Error())
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
-		}
-		err = rdb.HSet(c, roleKey, "privileges", marshalPrivileges).Err()
+		// redact role
+		err := redisRolesHandlers.RedisRedactRoleRepo{RDB: rdb}.RedactRoleDB(input.RoleName, input.Privileges)
 		if err != nil {
 			logs.Error.Println(err)
 			logs.ErrorLogger.Error(err.Error())
@@ -36,6 +33,6 @@ func RedactRole(rdb *redis.Client) gin.HandlerFunc {
 			return
 		}
 		logs.AuditLogger.Printf("%s updated successfully. New privileges: %s", input.RoleName, input.Privileges)
-		c.JSON(http.StatusOK, gin.H{roleKey + " updated successfully. New privileges": input.Privileges})
+		c.JSON(http.StatusOK, gin.H{"role:" + input.RoleName + " updated successfully. New privileges": input.Privileges})
 	}
 }

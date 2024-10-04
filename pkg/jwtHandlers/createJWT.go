@@ -4,22 +4,23 @@ import (
 	"IAM/initializers"
 	"IAM/pkg/handlers/auxiliary"
 	"IAM/pkg/models"
+	"IAM/pkg/redisSystem/redisHandlers/redisAuxiliaryHandlers"
 	"github.com/dgrijalva/jwt-go"
-	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v8"
 	"time"
 )
 
-func CreateJWT(c *gin.Context, email string, userVersion string, rdb *redis.Client) (string, error) {
+func CreateJWT(email string, userVersion string, rdb *redis.Client) (string, error) {
 	// get userID from redis
-	id, err := auxiliary.GetUserIDByEmail(c, email, rdb)
+	repo := &redisAuxiliaryHandlers.RedisUserIDByEmailRepo{RDB: rdb}
+	userID, err := auxiliary.UserIDByEmail(repo, email)
 	if err != nil {
 		return "", err
 	}
 
 	expirationTime := time.Now().Add(time.Hour * 24)
 	claims := models.Claims{
-		UserID:      id,
+		UserID:      userID,
 		UserVersion: userVersion,
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: expirationTime.Unix(),

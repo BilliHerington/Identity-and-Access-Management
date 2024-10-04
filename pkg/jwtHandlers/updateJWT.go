@@ -10,7 +10,7 @@ import (
 
 func UpdateJWT(c *gin.Context, userID, userVersion, email string, rdb *redis.Client) {
 	// sign token
-	signedToken, err := CreateJWT(c, email, userVersion, rdb)
+	signedToken, err := CreateJWT(email, userVersion, rdb)
 	if err != nil {
 		logs.Error.Println(err)
 		logs.ErrorLogger.Error(err.Error())

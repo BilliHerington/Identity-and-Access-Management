@@ -4,9 +4,10 @@ import (
 	"IAM/initializers"
 	"IAM/pkg/handlers/auxiliary"
 	"IAM/pkg/handlers/gmail"
+	"IAM/pkg/handlers/users"
 	"IAM/pkg/jwtHandlers"
 	"IAM/pkg/logs"
-	"context"
+	"IAM/pkg/redisSystem/redisHandlers/redisAuxiliaryHandlers"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v8"
@@ -23,6 +24,7 @@ func GoogleLogin(rdb *redis.Client) gin.HandlerFunc {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
+
 		// getting oauth token from HandleOAuthCallback
 		token, err := HandleOAuthCallback(c, config)
 		if err != nil {
@@ -31,6 +33,7 @@ func GoogleLogin(rdb *redis.Client) gin.HandlerFunc {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
+
 		// getting user info with oauth token
 		userInfo, err := GetUserInfo(token, config)
 		if err != nil {
@@ -49,30 +52,20 @@ func GoogleLogin(rdb *redis.Client) gin.HandlerFunc {
 		)
 
 		// check email exist
-		match, err := auxiliary.EmailMatch(email, rdb)
+		emailMatch, err := auxiliary.EmailMatch(&redisAuxiliaryHandlers.RedisEmailRepo{RDB: rdb}, email)
 		if err != nil {
 			logs.Error.Println(err)
 			logs.ErrorLogger.Error(err.Error())
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
-		ctx := context.Background()
 
 		// add user to redis if not exist
-		if !match {
+		if !emailMatch {
 			// create userID
 			userID = uuid.New().String()[:8]
 			userVersion = uuid.New().String()
-			err = auxiliary.RegistrationOrganizeHandler(rdb, ctx, userID, email, "", name, "user", "", userVersion)
-			if err != nil {
-				logs.Error.Println(err)
-				logs.ErrorLogger.Error(err.Error())
-				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-				return
-			}
-
-			// addi email key. Example:		(key) email:example@mail (value (userID)) 12345
-			err = rdb.Set(ctx, "email:"+email, userID, 0).Err()
+			err = users.RegistrationRepository.RegisterUser(&redisAuxiliaryHandlers.RedisRegistrationRepo{RDB: rdb}, userID, email, "", name, "user", "", userVersion)
 			if err != nil {
 				logs.Error.Println(err)
 				logs.ErrorLogger.Error(err.Error())
@@ -91,15 +84,16 @@ func GoogleLogin(rdb *redis.Client) gin.HandlerFunc {
 				return
 			}
 		} else {
+
 			// if user user already registered get userID and userVersion
-			userID, err = auxiliary.GetUserIDByEmail(ctx, email, rdb)
+			userID, err = auxiliary.UserIDByEmail(&redisAuxiliaryHandlers.RedisUserIDByEmailRepo{RDB: rdb}, email)
 			if err != nil {
 				logs.Error.Println(err)
 				logs.ErrorLogger.Error(err.Error())
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get user id"})
 				return
 			}
-			userVersion, err = rdb.HGet(ctx, "user:"+userID, "userVersion").Result()
+			userVersion, err = auxiliary.UserVersion(&redisAuxiliaryHandlers.RedisUserVersionRepo{RDB: rdb}, userID)
 			if err != nil {
 				logs.Error.Println(err)
 				logs.ErrorLogger.Error(err.Error())
@@ -107,7 +101,7 @@ func GoogleLogin(rdb *redis.Client) gin.HandlerFunc {
 				return
 			}
 		}
-
+		// update JWT
 		jwtHandlers.UpdateJWT(c, userID, email, userVersion, rdb)
 		logs.AuditLogger.Printf("user:%s: %s is logged in", userID, email)
 	}

@@ -4,15 +4,20 @@ import (
 	"IAM/pkg/handlers/auxiliary"
 	"IAM/pkg/logs"
 	"IAM/pkg/models"
-	"context"
-	"encoding/json"
+	"IAM/pkg/redisSystem/redisHandlers/redisAuxiliaryHandlers"
+	"IAM/pkg/redisSystem/redisHandlers/redisRolesHandlers"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v8"
 	"net/http"
 )
 
+type CreateRoleRepository interface {
+	CreateRole(roleName string, privileges []string) error
+}
+
 func CreateRole(rdb *redis.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
+
 		// get data from client and binding with JSON
 		var input models.RolesData
 		if err := c.ShouldBindJSON(&input); err != nil {
@@ -22,9 +27,11 @@ func CreateRole(rdb *redis.Client) gin.HandlerFunc {
 			return
 		}
 
-		roleKey := "role:" + input.RoleName
-		//check role exist in redis
-		match, err := auxiliary.RoleMatch(roleKey, rdb)
+		// transfer client Redis (from main) in type RedisRoleRepository struct
+		repo := &redisAuxiliaryHandlers.RedisRoleRepo{RDB: rdb} // RDB - field of RedisRoleRepository struct, rdb - redis client from main
+
+		//check role exist
+		match, err := auxiliary.RoleMatch(repo, input.RoleName)
 		if err != nil {
 			logs.Error.Println(err)
 			logs.ErrorLogger.Error(err.Error())
@@ -34,27 +41,9 @@ func CreateRole(rdb *redis.Client) gin.HandlerFunc {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "role already exists"})
 			return
 		}
-		// marshal Privileges for writing in redis
-		privilegesJSON, err := json.Marshal(input.Privileges)
-		if err != nil {
-			logs.Error.Println(err)
-			logs.ErrorLogger.Error(err.Error())
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
-		}
-		// writing in redis
-		ctx := context.Background()
-		err = rdb.Watch(ctx, func(tx *redis.Tx) error {
-			_, err = tx.Pipelined(ctx, func(pipe redis.Pipeliner) error {
-				pipe.HMSet(ctx, roleKey, map[string]interface{}{
-					"name":       input.RoleName,
-					"privileges": privilegesJSON,
-				})
-				pipe.SAdd(ctx, "roles", input.RoleName)
-				return nil
-			})
-			return err
-		}, roleKey)
+
+		// save role
+		err = redisRolesHandlers.RedisCreateRoleRepo{RDB: rdb}.CreateRole(input.RoleName, input.Privileges)
 		if err != nil {
 			logs.Error.Println(err)
 			logs.ErrorLogger.Error(err.Error())

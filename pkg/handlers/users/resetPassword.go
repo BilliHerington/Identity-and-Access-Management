@@ -5,6 +5,7 @@ import (
 	"IAM/pkg/handlers/gmail"
 	"IAM/pkg/logs"
 	"IAM/pkg/models"
+	"IAM/pkg/redisSystem/redisHandlers/redisAuxiliaryHandlers"
 	"context"
 	"fmt"
 	"github.com/gin-gonic/gin"
@@ -31,7 +32,8 @@ func StartResetPassword(rdb *redis.Client) gin.HandlerFunc {
 		}
 
 		// check email exist
-		emailMatch, err := auxiliary.EmailMatch(input.Email, rdb)
+		repo := &redisAuxiliaryHandlers.RedisEmailRepo{RDB: rdb}
+		emailMatch, err := auxiliary.EmailMatch(repo, input.Email)
 		if err != nil {
 			logs.ErrorLogger.Error(err)
 			logs.Error.Println(err)
@@ -59,7 +61,8 @@ func StartResetPassword(rdb *redis.Client) gin.HandlerFunc {
 		}
 
 		// get userID from redis
-		userID, err := auxiliary.GetUserIDByEmail(ctx, input.Email, rdb)
+		repo2 := &redisAuxiliaryHandlers.RedisUserIDByEmailRepo{RDB: rdb}
+		userID, err := auxiliary.UserIDByEmail(repo2, input.Email)
 		if err != nil {
 			logs.ErrorLogger.Error(err)
 			logs.Error.Println(err)
@@ -102,7 +105,8 @@ func ApproveResetPassword(rdb *redis.Client) gin.HandlerFunc {
 		}
 
 		// check email exist in redis
-		emailMatch, err := auxiliary.EmailMatch(input.Email, rdb)
+		repo := &redisAuxiliaryHandlers.RedisEmailRepo{RDB: rdb}
+		emailMatch, err := auxiliary.EmailMatch(repo, input.Email)
 		if err != nil {
 			logs.ErrorLogger.Error(err)
 			logs.Error.Println(err)
@@ -115,7 +119,8 @@ func ApproveResetPassword(rdb *redis.Client) gin.HandlerFunc {
 		}
 
 		// get userID from redis
-		userID, err := auxiliary.GetUserIDByEmail(ctx, input.Email, rdb)
+		repo2 := &redisAuxiliaryHandlers.RedisUserIDByEmailRepo{RDB: rdb}
+		userID, err := auxiliary.UserIDByEmail(repo2, input.Email)
 		if err != nil {
 			logs.ErrorLogger.Error(err)
 			logs.Error.Println(err)

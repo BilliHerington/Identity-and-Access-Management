@@ -1,37 +1,35 @@
 package auxiliary
 
-import (
-	"context"
-	"errors"
-	"github.com/go-redis/redis/v8"
-)
+// RoleRepository interface for work with roles
+type RoleRepository interface {
+	GetRole(role string) (string, error)
+}
 
 // RoleMatch check role exist in redis, return true if exist
-func RoleMatch(roleKey string, rdb *redis.Client) (bool, error) {
-	ctx := context.Background()
-	res, err := rdb.HGetAll(ctx, roleKey).Result()
+func RoleMatch(repo RoleRepository, role string) (bool, error) {
+	role, err := repo.GetRole(role)
 	if err != nil {
 		return false, err
 	}
-	if len(res) == 0 {
+	if role == "" {
 		return false, nil
 	}
 	return true, nil
 }
 
-// EmailMatch check email exist in redis, return true if exist
-func EmailMatch(email string, rdb *redis.Client) (bool, error) {
-	ctx := context.Background()
+// EmailRepository interface for work with emails
+type EmailRepository interface {
+	GetEmail(email string) (string, error)
+}
 
-	// check email exist in redis
-	emailKey := "email:" + email
-	_, err := rdb.Get(ctx, emailKey).Result()
+// EmailMatch check email exist in redis, return true if exist
+func EmailMatch(repo EmailRepository, email string) (bool, error) {
+	email, err := repo.GetEmail(email)
 	if err != nil {
-		if errors.Is(err, redis.Nil) {
-			return false, nil
-		} else {
-			return false, err
-		}
+		return false, err
+	}
+	if email == "" {
+		return false, nil
 	}
 	return true, nil
 }
