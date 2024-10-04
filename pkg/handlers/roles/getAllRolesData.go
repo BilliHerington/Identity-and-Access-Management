@@ -2,36 +2,29 @@ package roles
 
 import (
 	"IAM/pkg/logs"
-	"context"
+	"IAM/pkg/redisSystem/redisHandlers/redisRolesHandlers"
+	"errors"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v8"
 	"net/http"
 )
 
-func GetAllRolesData(rdb *redis.Client) gin.HandlerFunc {
+type GetAllRolesDataRepository interface {
+	GetAllRolesDataFromDB() ([]map[string]string, error)
+}
+
+func GetAllRolesData(rdb redis.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		ctx := context.Background()
-		roleNames, err := rdb.SMembers(ctx, "roles").Result()
-		if err != nil {
+		repo := &redisRolesHandlers.RedisGetAllRolesDataRepo{RDB: rdb}
+		roleData, err := repo.GetAllRolesDataFromDB()
+		if errors.Is(err, redis.Nil) {
+			c.Status(http.StatusNoContent)
+		} else if err != nil {
 			logs.Error.Println(err)
-			logs.ErrorLogger.Error(err.Error())
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			logs.ErrorLogger.Error(err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err})
 			return
 		}
-
-		var roles []map[string]string
-		for _, roleName := range roleNames {
-			roleData, err := rdb.HGetAll(ctx, "role:"+roleName).Result()
-			if err != nil {
-				logs.Error.Println(err)
-				logs.ErrorLogger.Error(err.Error())
-				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-				return
-			}
-			if len(roleData) > 0 {
-				roles = append(roles, roleData)
-			}
-		}
-		c.JSON(http.StatusOK, gin.H{"roles": roles})
+		c.JSON(http.StatusOK, gin.H{"roles": roleData})
 	}
 }

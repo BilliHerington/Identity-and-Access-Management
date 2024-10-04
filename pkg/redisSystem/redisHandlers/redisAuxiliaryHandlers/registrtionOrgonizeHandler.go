@@ -1,12 +1,13 @@
-package auxiliary
+package redisAuxiliaryHandlers
 
-import (
-	"context"
-	"github.com/go-redis/redis/v8"
-)
+import "github.com/go-redis/redis/v8"
 
-func RegistrationOrganizeHandler(rdb *redis.Client, ctx context.Context, userID, email, password, name, role, jwt, userVersion string) error {
-	err := rdb.Watch(ctx, func(tx *redis.Tx) error {
+type RedisRegistrationRepo struct {
+	RDB *redis.Client
+}
+
+func (repo RedisRegistrationRepo) RegisterUser(userID, email, password, name, role, jwt, userVersion string) error {
+	err := repo.RDB.Watch(ctx, func(tx *redis.Tx) error {
 		_, err := tx.Pipelined(ctx, func(pipe redis.Pipeliner) error {
 			pipe.HMSet(ctx, "user:"+userID, map[string]interface{}{
 				"id":          userID,
@@ -18,6 +19,7 @@ func RegistrationOrganizeHandler(rdb *redis.Client, ctx context.Context, userID,
 				"userVersion": userVersion,
 			})
 			pipe.SAdd(ctx, "users", userID)
+			pipe.Set(ctx, "email:"+email, userID, 0)
 			return nil
 		})
 		return err

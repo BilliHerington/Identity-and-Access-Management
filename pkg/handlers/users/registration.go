@@ -5,6 +5,7 @@ import (
 	"IAM/pkg/handlers/gmail"
 	"IAM/pkg/logs"
 	"IAM/pkg/models"
+	"IAM/pkg/redisSystem/redisHandlers/redisAuxiliaryHandlers"
 	"context"
 	"fmt"
 	"github.com/gin-gonic/gin"
@@ -15,6 +16,10 @@ import (
 	"net/http"
 	"time"
 )
+
+type RegistrationRepository interface {
+	RegisterUser(userID, email, password, name, role, jwt, userVersion string) error
+}
 
 // GenerateVerificationCode generates a random 6-digit verification code
 func GenerateVerificationCode() string {
@@ -34,8 +39,10 @@ func StartRegistration(rdb *redis.Client) gin.HandlerFunc {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
+
 		// check email exist
-		emailMatch, err := auxiliary.EmailMatch(input.Email, rdb)
+		repo := &redisAuxiliaryHandlers.RedisEmailRepo{RDB: rdb}
+		emailMatch, err := auxiliary.EmailMatch(repo, input.Email)
 		if err != nil {
 			logs.Error.Println(err)
 			logs.ErrorLogger.Error(err.Error())
@@ -45,6 +52,7 @@ func StartRegistration(rdb *redis.Client) gin.HandlerFunc {
 			c.JSON(http.StatusConflict, gin.H{"error": "Email already registered"})
 			return
 		}
+
 		// code generation
 		verificationCode := GenerateVerificationCode()
 
@@ -65,7 +73,7 @@ func StartRegistration(rdb *redis.Client) gin.HandlerFunc {
 		userID := uuid.New().String()[:8]
 
 		// save User in Redis
-		ctx := context.Background()
+		//ctx := context.Background()
 		err = rdb.Watch(ctx, func(tx *redis.Tx) error {
 			_, err = tx.Pipelined(ctx, func(pipe redis.Pipeliner) error {
 				pipe.HMSet(ctx, "user:"+userID, map[string]interface{}{
@@ -86,7 +94,7 @@ func StartRegistration(rdb *redis.Client) gin.HandlerFunc {
 		}
 
 		// add new EmailKey for User
-		err = rdb.Set(ctx, "email:"+input.Email, userID, 0).Err()
+
 		if err != nil {
 			logs.Error.Println(err)
 			logs.ErrorLogger.Error(err.Error())
@@ -120,8 +128,9 @@ func ApproveRegistration(rdb *redis.Client) gin.HandlerFunc {
 			c.JSON(http.StatusBadRequest, gin.H{"error": msg})
 		}
 
-		// get id from redis
-		userID, err := auxiliary.GetUserIDByEmail(ctx, input.Email, rdb)
+		// get userID from redis
+		repo := &redisAuxiliaryHandlers.RedisUserIDByEmailRepo{RDB: rdb}
+		userID, err := auxiliary.UserIDByEmail(repo, input.Email)
 		if err != nil {
 			logs.Error.Println(err)
 			logs.ErrorLogger.Error(err.Error())
@@ -157,7 +166,8 @@ func ApproveRegistration(rdb *redis.Client) gin.HandlerFunc {
 			userVersion := uuid.New().String()
 
 			// save User in Redis
-			err = auxiliary.RegistrationOrganizeHandler(rdb, ctx, userID, input.Email, input.Password, input.Name, "user", "", userVersion)
+			repo2 := &redisAuxiliaryHandlers.RedisRegistrationRepo{RDB: rdb}
+			err = RegistrationRepository.RegisterUser(repo2, userID, input.Email, input.Password, input.Name, "user", "", userVersion)
 			if err != nil {
 				logs.Error.Println(err)
 				logs.ErrorLogger.Error(err.Error())

@@ -2,9 +2,10 @@ package jwtHandlers
 
 import (
 	"IAM/initializers"
+	"IAM/pkg/handlers/auxiliary"
 	"IAM/pkg/logs"
 	"IAM/pkg/models"
-	"context"
+	"IAM/pkg/redisSystem/redisHandlers/redisAuxiliaryHandlers"
 	"fmt"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/go-redis/redis/v8"
@@ -13,7 +14,7 @@ import (
 func IsTokenValid(tokenString, userID string, rdb *redis.Client) (bool, error) {
 
 	// get current userVersion from redis
-	currentVersion, err := rdb.HGet(context.Background(), "user:"+userID, "userVersion").Result()
+	currentUserVersion, err := auxiliary.UserVersion(&redisAuxiliaryHandlers.RedisUserVersionRepo{RDB: rdb}, userID)
 	if err != nil {
 		logs.Error.Println(err)
 		logs.ErrorLogger.Error(err)
@@ -21,14 +22,7 @@ func IsTokenValid(tokenString, userID string, rdb *redis.Client) (bool, error) {
 	}
 
 	// check signature
-	_, err = ValidateTokenSignature(tokenString)
-	if err != nil {
-		logs.Error.Println(err)
-		logs.ErrorLogger.Error(err)
-		return false, err
-	}
-
-	userVersion, err := rdb.HGet(context.Background(), "user:"+userID, "userVersion").Result()
+	claims, err := ValidateTokenSignature(tokenString)
 	if err != nil {
 		logs.Error.Println(err)
 		logs.ErrorLogger.Error(err)
@@ -36,7 +30,7 @@ func IsTokenValid(tokenString, userID string, rdb *redis.Client) (bool, error) {
 	}
 
 	// compare
-	if userVersion != currentVersion {
+	if claims.UserVersion != currentUserVersion {
 		return false, nil
 	}
 	return true, nil

@@ -5,26 +5,32 @@ import (
 	"IAM/pkg/jwtHandlers"
 	"IAM/pkg/logs"
 	"IAM/pkg/models"
-	"context"
+	"IAM/pkg/redisSystem/redisHandlers/redisAuxiliaryHandlers"
+	"IAM/pkg/redisSystem/redisHandlers/redisUsersHandlers"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v8"
 	"golang.org/x/crypto/bcrypt"
 	"net/http"
 )
 
+type GetPasswordRepository interface {
+	GetPassword(userID string) (string, error)
+}
+
 func Authenticate(rdb *redis.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
+
 		// get data from client and binding with JSON
 		var input models.AuthData
-		ctx := context.Background()
 		if err := c.ShouldBind(&input); err != nil {
 			logs.Error.Println(err)
 			logs.ErrorLogger.Error(err.Error())
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
+
 		// check email exist
-		emailMatch, err := auxiliary.EmailMatch(input.Email, rdb)
+		emailMatch, err := auxiliary.EmailMatch(&redisAuxiliaryHandlers.RedisEmailRepo{RDB: rdb}, input.Email)
 		if err != nil {
 			logs.Error.Println(err)
 			logs.ErrorLogger.Error(err.Error())
@@ -34,16 +40,19 @@ func Authenticate(rdb *redis.Client) gin.HandlerFunc {
 			c.JSON(http.StatusConflict, gin.H{"error": "Email does not match"})
 			return
 		}
-		// get id
-		userID, err := auxiliary.GetUserIDByEmail(ctx, input.Email, rdb)
+
+		// get userID
+		userID, err := auxiliary.UserIDByEmail(&redisAuxiliaryHandlers.RedisUserIDByEmailRepo{RDB: rdb}, input.Email)
 		if err != nil {
 			logs.Error.Println(err)
 			logs.ErrorLogger.Error(err.Error())
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get user id"})
 			return
 		}
+
 		// get pass
-		pass, err := rdb.HGet(ctx, "user:"+userID, "password").Result()
+		repo := &redisUsersHandlers.RedisGetPasswordRepo{RDB: rdb}
+		pass, err := repo.GetPassword(userID)
 		if err != nil {
 			logs.Error.Println(err)
 			logs.ErrorLogger.Error(err.Error())
@@ -61,7 +70,7 @@ func Authenticate(rdb *redis.Client) gin.HandlerFunc {
 		}
 
 		// get userVersion
-		userVersion, err := rdb.HGet(ctx, "user:"+userID, "userVersion").Result()
+		userVersion, err := auxiliary.UserVersion(&redisAuxiliaryHandlers.RedisUserVersionRepo{RDB: rdb}, userID)
 		if err != nil {
 			logs.Error.Println(err)
 			logs.ErrorLogger.Error(err.Error())
