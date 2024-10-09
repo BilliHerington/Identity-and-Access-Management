@@ -35,7 +35,7 @@ func CreateRole(rdb *redis.Client) gin.HandlerFunc {
 		if err != nil {
 			logs.Error.Println(err)
 			logs.ErrorLogger.Error(err.Error())
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		} else if match {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "role already exists"})

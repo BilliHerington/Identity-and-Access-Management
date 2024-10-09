@@ -1,18 +1,22 @@
 package redisRolesHandlers
 
 import (
+	"errors"
 	"github.com/go-redis/redis/v8"
 )
 
 type RedisGetAllRolesDataRepo struct {
-	RDB redis.Client
+	RDB *redis.Client
 }
 
-func (repo *RedisGetAllRolesDataRepo) GetAllRolesDataFromDB() ([]map[string]string, error) {
+func (repo RedisGetAllRolesDataRepo) GetAllRolesDataFromDB() ([]map[string]string, error) {
 	var roles []map[string]string
 
 	// get roles list from redis
 	allRoles, err := repo.RDB.SMembers(ctx, "roles").Result()
+	if errors.Is(err, redis.Nil) {
+		return roles, errors.New("no roles found")
+	}
 	if err != nil {
 		return roles, err
 	}

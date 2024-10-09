@@ -33,8 +33,12 @@ func DeleteUser(rdb *redis.Client) gin.HandlerFunc {
 		userID, err := auxiliary.UserIDByEmail(&redisAuxiliaryHandlers.RedisUserIDByEmailRepo{RDB: rdb}, input.Email)
 		if err != nil {
 			logs.Error.Println(err)
-			logs.ErrorLogger.Errorln(err.Error())
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			logs.ErrorLogger.Error(err.Error())
+			if err.Error() == "email not found" {
+				c.JSON(http.StatusNotFound, gin.H{"error": "email not found"})
+			} else {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			}
 			return
 		}
 

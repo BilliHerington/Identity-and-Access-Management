@@ -34,7 +34,11 @@ func AssignRole(rdb *redis.Client) gin.HandlerFunc {
 		if err != nil {
 			logs.Error.Println(err)
 			logs.ErrorLogger.Error(err.Error())
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			if err.Error() == "email not found" {
+				c.JSON(http.StatusNotFound, gin.H{"error": "email not found"})
+			} else {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			}
 			return
 		}
 

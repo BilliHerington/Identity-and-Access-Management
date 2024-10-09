@@ -19,14 +19,17 @@ func AuthMiddleware(rdb *redis.Client) gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-		userID := "0e631cfe"
 		// check token valid
-		tokenValid, err := jwtHandlers.IsTokenValid(tokenString, userID, rdb)
+		tokenValid, userID, err := jwtHandlers.IsTokenValid(tokenString, rdb)
 		if err != nil {
 			logs.Error.Println(err)
 			logs.ErrorLogger.Error(err.Error())
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			c.Abort()
+			if err.Error() == "userVersion not found" {
+				c.JSON(http.StatusNotFound, gin.H{"error": "email not found"})
+			} else {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			}
+			return
 		} else if !tokenValid {
 			logs.Error.Println(err)
 			logs.ErrorLogger.Error(err.Error())
@@ -34,6 +37,7 @@ func AuthMiddleware(rdb *redis.Client) gin.HandlerFunc {
 			c.Abort()
 			return
 		}
+		c.Set("userID", userID)
 		c.Next()
 	}
 }

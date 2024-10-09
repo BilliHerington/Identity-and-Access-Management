@@ -73,7 +73,9 @@ func StartRegistration(rdb *redis.Client) gin.HandlerFunc {
 		userID := uuid.New().String()[:8]
 
 		// save User in Redis
-		//ctx := context.Background()
+		ctx := context.Background()
+		//repo2 := redisAuxiliaryHandlers.RedisRegistrationRepo{RDB: rdb}
+		//err = repo2.RegisterUser(userID, input.Email, "")
 		err = rdb.Watch(ctx, func(tx *redis.Tx) error {
 			_, err = tx.Pipelined(ctx, func(pipe redis.Pipeliner) error {
 				pipe.HMSet(ctx, "user:"+userID, map[string]interface{}{
@@ -134,7 +136,11 @@ func ApproveRegistration(rdb *redis.Client) gin.HandlerFunc {
 		if err != nil {
 			logs.Error.Println(err)
 			logs.ErrorLogger.Error(err.Error())
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			if err.Error() == "email not found" {
+				c.JSON(http.StatusNotFound, gin.H{"error": "email not found"})
+			} else {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			}
 			return
 		}
 

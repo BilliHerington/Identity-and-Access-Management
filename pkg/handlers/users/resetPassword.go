@@ -64,9 +64,13 @@ func StartResetPassword(rdb *redis.Client) gin.HandlerFunc {
 		repo2 := &redisAuxiliaryHandlers.RedisUserIDByEmailRepo{RDB: rdb}
 		userID, err := auxiliary.UserIDByEmail(repo2, input.Email)
 		if err != nil {
-			logs.ErrorLogger.Error(err)
 			logs.Error.Println(err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+			logs.ErrorLogger.Error(err.Error())
+			if err.Error() == "email not found" {
+				c.JSON(http.StatusNotFound, gin.H{"error": "email not found"})
+			} else {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			}
 			return
 		}
 
@@ -122,9 +126,13 @@ func ApproveResetPassword(rdb *redis.Client) gin.HandlerFunc {
 		repo2 := &redisAuxiliaryHandlers.RedisUserIDByEmailRepo{RDB: rdb}
 		userID, err := auxiliary.UserIDByEmail(repo2, input.Email)
 		if err != nil {
-			logs.ErrorLogger.Error(err)
 			logs.Error.Println(err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+			logs.ErrorLogger.Error(err.Error())
+			if err.Error() == "email not found" {
+				c.JSON(http.StatusNotFound, gin.H{"error": "email not found"})
+			} else {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			}
 			return
 		}
 
