@@ -80,7 +80,7 @@ func GoogleLogin(rdb *redis.Client) gin.HandlerFunc {
 			if err != nil {
 				logs.Error.Println("Error sending email:", err)
 				logs.ErrorLogger.Error(err.Error())
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to send welcome email"})
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 				return
 			}
 		} else {
@@ -90,14 +90,22 @@ func GoogleLogin(rdb *redis.Client) gin.HandlerFunc {
 			if err != nil {
 				logs.Error.Println(err)
 				logs.ErrorLogger.Error(err.Error())
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get user id"})
+				if err.Error() == "email not found" {
+					c.JSON(http.StatusNotFound, gin.H{"error": "email not found"})
+				} else {
+					c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				}
 				return
 			}
 			userVersion, err = auxiliary.UserVersion(&redisAuxiliaryHandlers.RedisUserVersionRepo{RDB: rdb}, userID)
 			if err != nil {
 				logs.Error.Println(err)
 				logs.ErrorLogger.Error(err.Error())
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get user version"})
+				if err.Error() == "userVersion not found" {
+					c.JSON(http.StatusNotFound, gin.H{"error": "email not found"})
+				} else {
+					c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				}
 				return
 			}
 		}

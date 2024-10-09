@@ -12,7 +12,7 @@ type RedisUserIDByEmailRepo struct {
 func (repo *RedisUserIDByEmailRepo) GetUserIDByEmail(email string) (string, error) {
 	userID, err := repo.RDB.Get(ctx, "email:"+email).Result()
 	if errors.Is(err, redis.Nil) {
-		return "", nil
+		return "", errors.New("email not found")
 	} else if err != nil {
 		return "", err
 	}

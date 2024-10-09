@@ -14,11 +14,6 @@ import (
 	"strconv"
 )
 
-//var (
-//	Rdb *redis.Client
-//	Ctx = context.Background()
-//)
-
 func InitRedis() (*redis.Client, error) {
 	initializers.LoadEnvVariables()
 	ctx := context.Background()
@@ -65,7 +60,7 @@ func InitializeRoles(rdb *redis.Client) {
 	} else {
 		adminMatch = true
 	}
-	// check roel:user exist
+	// check role:user exist
 	userRes, err := rdb.HGetAll(ctx, userRoleKey).Result()
 	if err != nil {
 		logs.ErrorLogger.Error(err.Error())
@@ -102,6 +97,7 @@ func InitializeRoles(rdb *redis.Client) {
 		logs.AuditLogger.Println("role 'admin' created successfully")
 		logs.Info.Println("role 'admin' created successfully")
 	}
+
 	// create user if not exist
 	if !userMatch {
 		val := reflect.ValueOf(models.UserPrivileges)
@@ -134,15 +130,18 @@ func InitializeAdmin(rdb *redis.Client) {
 	ctx := context.Background()
 
 	userID := "ROOT"
-	adminMail := os.Getenv("ROOT_EMAIL")
-	adminPassword := os.Getenv("ROOT_PASSWORD")
-	name := "ROOT"
+
 	res, err := rdb.HGetAll(ctx, "user:"+userID).Result()
 	if err != nil {
 		logs.ErrorLogger.Error(err.Error())
 		logs.Error.Fatalf("redisSystem HGetAll failed: %v", err)
 	}
 	if len(res) == 0 {
+
+		adminMail := os.Getenv("ROOT_EMAIL")
+		adminPassword := os.Getenv("ROOT_PASSWORD")
+		name := "ROOT"
+
 		// hashing pass
 		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(adminPassword), bcrypt.DefaultCost)
 		if err != nil {

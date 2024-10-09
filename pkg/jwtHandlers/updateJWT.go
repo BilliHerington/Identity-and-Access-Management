@@ -14,7 +14,11 @@ func UpdateJWT(c *gin.Context, userID, userVersion, email string, rdb *redis.Cli
 	if err != nil {
 		logs.Error.Println(err)
 		logs.ErrorLogger.Error(err.Error())
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		if err.Error() == "email not found" {
+			c.JSON(http.StatusNotFound, gin.H{"error": "email not found"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		}
 		return
 	}
 	ctx := context.Background()
