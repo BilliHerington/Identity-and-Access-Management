@@ -1,20 +1,32 @@
 package redisRolesHandlers
 
 import (
+	"IAM/pkg/logs"
+	"IAM/pkg/redisSystem/redisHandlers/redisAuxiliaryHandlers"
 	"encoding/json"
+	"errors"
 	"github.com/go-redis/redis/v8"
 )
 
-type RedisCreateRoleRepo struct {
-	RDB *redis.Client
-}
-
-func (repo RedisCreateRoleRepo) CreateRole(roleName string, privileges []string) error {
+func (repo *RedisRolesManagementRepository) CreateRole(roleName string, privileges []string) error {
 
 	// marshal Privileges for writing in redis
 	privilegesMarshaled, err := json.Marshal(privileges)
 	if err != nil {
+		logs.Error.Println(err)
+		logs.ErrorLogger.Error(err)
 		return err
+	}
+
+	// check role exist
+	roleExist, err := redisAuxiliaryHandlers.CheckRoleExist(repo.RDB, roleName)
+	if err != nil {
+		logs.Error.Println(err)
+		logs.ErrorLogger.Error(err)
+		return err
+	}
+	if roleExist {
+		return errors.New("role already exist")
 	}
 
 	// writing in redis

@@ -1,15 +1,12 @@
 package redisRolesHandlers
 
 import (
+	"IAM/pkg/logs"
 	"errors"
 	"github.com/go-redis/redis/v8"
 )
 
-type RedisGetAllRolesDataRepo struct {
-	RDB *redis.Client
-}
-
-func (repo RedisGetAllRolesDataRepo) GetAllRolesDataFromDB() ([]map[string]string, error) {
+func (repo *RedisRolesManagementRepository) GetAllRolesDataFromDB() ([]map[string]string, error) {
 	var roles []map[string]string
 
 	// get roles list from redis
@@ -18,6 +15,8 @@ func (repo RedisGetAllRolesDataRepo) GetAllRolesDataFromDB() ([]map[string]strin
 		return roles, errors.New("no roles found")
 	}
 	if err != nil {
+		logs.Error.Println(err)
+		logs.ErrorLogger.Error(err)
 		return roles, err
 	}
 
@@ -25,13 +24,15 @@ func (repo RedisGetAllRolesDataRepo) GetAllRolesDataFromDB() ([]map[string]strin
 	for _, roleName := range allRoles {
 		roleData, err := repo.RDB.HGetAll(ctx, "role:"+roleName).Result()
 		if err != nil {
+			logs.Error.Println(err)
+			logs.ErrorLogger.Error(err)
 			return roles, err
 		}
 		if len(roleData) > 0 {
 			roles = append(roles, roleData)
 		} else {
 			roles = append(roles, map[string]string{
-				"error": "No data found",
+				"error": "No data found for role: " + roleName,
 			})
 		}
 	}

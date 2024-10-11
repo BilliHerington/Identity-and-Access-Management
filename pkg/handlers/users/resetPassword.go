@@ -6,7 +6,6 @@ import (
 	"IAM/pkg/logs"
 	"IAM/pkg/models"
 	"IAM/pkg/redisSystem/redisHandlers/redisAuxiliaryHandlers"
-	"context"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v8"
@@ -17,27 +16,25 @@ import (
 
 func StartResetPassword(rdb *redis.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		ctx := context.Background()
 
 		// getting data from client and binding
 		var input struct {
-			Email string `json:"email"`
+			Email string `json:"email" binding:"required,email"`
 		}
-		err := c.ShouldBindJSON(&input)
-		if err != nil {
+		if err := c.ShouldBindJSON(&input); err != nil {
 			logs.ErrorLogger.Error(err)
 			logs.Error.Println(err)
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			c.JSON(400, gin.H{"error": "incorrect data format, please check your input data"})
 			return
 		}
 
 		// check email exist
-		repo := &redisAuxiliaryHandlers.RedisEmailRepo{RDB: rdb}
-		emailMatch, err := auxiliary.EmailMatch(repo, input.Email)
+		emailMatchRepo := &redisAuxiliaryHandlers.RedisAuxiliaryRepository{RDB: rdb}
+		emailMatch, err := auxiliary.EmailMatch(emailMatchRepo, input.Email)
 		if err != nil {
 			logs.ErrorLogger.Error(err)
 			logs.Error.Println(err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			c.JSON(500, gin.H{"error": "please try again later"})
 			return
 		} else if !emailMatch {
 			c.JSON(http.StatusConflict, gin.H{"error": "Email not found"})
@@ -56,32 +53,29 @@ func StartResetPassword(rdb *redis.Client) gin.HandlerFunc {
 		if err != nil {
 			logs.ErrorLogger.Errorln(err)
 			logs.Error.Println(err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+			c.JSON(500, gin.H{"error": "please try again later"})
 			return
 		}
 
-		// get userID from redis
-		repo2 := &redisAuxiliaryHandlers.RedisUserIDByEmailRepo{RDB: rdb}
-		userID, err := auxiliary.UserIDByEmail(repo2, input.Email)
+		// get userID from DB
+		emailRepo := &redisAuxiliaryHandlers.RedisAuxiliaryRepository{RDB: rdb}
+		userID, err := auxiliary.UserIDByEmail(emailRepo, input.Email)
 		if err != nil {
 			logs.Error.Println(err)
 			logs.ErrorLogger.Error(err.Error())
 			if err.Error() == "email not found" {
-				c.JSON(http.StatusNotFound, gin.H{"error": "email not found"})
+				c.JSON(http.StatusConflict, gin.H{"error": "email not found"})
 			} else {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				c.JSON(500, gin.H{"error": "please try again later"})
 			}
 			return
 		}
 
 		// add resetPassCode field to User in redis
-		err = rdb.HSet(ctx, "user:"+userID, map[string]interface{}{
-			"resetPassCode": resetPassCode,
-		}).Err()
-		if err != nil {
+		if err = UserManageRepo.SavePassCode(resetPassCode, userID); err != nil {
 			logs.ErrorLogger.Error(err)
 			logs.Error.Println(err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+			c.JSON(500, gin.H{"error": "please try again later"})
 			return
 		}
 		logs.AuditLogger.Printf("reset pass code sended to user: %s: %s", userID, input.Email)
@@ -90,15 +84,13 @@ func StartResetPassword(rdb *redis.Client) gin.HandlerFunc {
 }
 func ApproveResetPassword(rdb *redis.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		ctx := context.Background()
 
 		// getting data from client and binding
 		var input models.ResetPass
-		err := c.ShouldBindJSON(&input)
-		if err != nil {
+		if err := c.ShouldBindJSON(&input); err != nil {
 			logs.ErrorLogger.Error(err)
 			logs.Error.Println(err)
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			c.JSON(400, gin.H{"error": "incorrect data format, please check your input data"})
 			return
 		}
 
@@ -108,13 +100,13 @@ func ApproveResetPassword(rdb *redis.Client) gin.HandlerFunc {
 			c.JSON(http.StatusBadRequest, gin.H{"error": msg})
 		}
 
-		// check email exist in redis
-		repo := &redisAuxiliaryHandlers.RedisEmailRepo{RDB: rdb}
-		emailMatch, err := auxiliary.EmailMatch(repo, input.Email)
+		// check email exist in db
+		emailMatchRepo := &redisAuxiliaryHandlers.RedisAuxiliaryRepository{RDB: rdb}
+		emailMatch, err := auxiliary.EmailMatch(emailMatchRepo, input.Email)
 		if err != nil {
 			logs.ErrorLogger.Error(err)
 			logs.Error.Println(err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			c.JSON(500, gin.H{"error": "please try again later"})
 			return
 		}
 		if !emailMatch {
@@ -123,16 +115,12 @@ func ApproveResetPassword(rdb *redis.Client) gin.HandlerFunc {
 		}
 
 		// get userID from redis
-		repo2 := &redisAuxiliaryHandlers.RedisUserIDByEmailRepo{RDB: rdb}
-		userID, err := auxiliary.UserIDByEmail(repo2, input.Email)
+		emailRepo := &redisAuxiliaryHandlers.RedisAuxiliaryRepository{RDB: rdb}
+		userID, err := auxiliary.UserIDByEmail(emailRepo, input.Email)
 		if err != nil {
 			logs.Error.Println(err)
 			logs.ErrorLogger.Error(err.Error())
-			if err.Error() == "email not found" {
-				c.JSON(http.StatusNotFound, gin.H{"error": "email not found"})
-			} else {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			}
+			c.JSON(500, gin.H{"error": "please try again later"})
 			return
 		}
 
@@ -141,7 +129,7 @@ func ApproveResetPassword(rdb *redis.Client) gin.HandlerFunc {
 		if err != nil {
 			logs.ErrorLogger.Error(err)
 			logs.Error.Println(err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+			c.JSON(500, gin.H{"error": "please try again later"})
 			return
 		}
 		// compare codes
@@ -156,7 +144,7 @@ func ApproveResetPassword(rdb *redis.Client) gin.HandlerFunc {
 			if err != nil {
 				logs.Error.Println(err)
 				logs.ErrorLogger.Error(err.Error())
-				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				c.JSON(500, gin.H{"error": "please try again later"})
 				return
 			}
 			input.NewPassword = string(hashedPassword)
@@ -172,7 +160,7 @@ func ApproveResetPassword(rdb *redis.Client) gin.HandlerFunc {
 			if err != nil {
 				logs.ErrorLogger.Error(err)
 				logs.Error.Println(err)
-				c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+				c.JSON(500, gin.H{"error": "please try again later"})
 				return
 			}
 
@@ -181,7 +169,7 @@ func ApproveResetPassword(rdb *redis.Client) gin.HandlerFunc {
 			if err != nil {
 				logs.ErrorLogger.Error(err)
 				logs.Error.Println(err)
-				c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+				c.JSON(500, gin.H{"error": "please try again later"})
 				return
 			}
 			logs.AuditLogger.Printf("user: %s: %s reset password", userID, input.Email)

@@ -1,25 +1,29 @@
 package redisRolesHandlers
 
 import (
+	"IAM/pkg/logs"
+	"IAM/pkg/redisSystem/redisHandlers/redisAuxiliaryHandlers"
+	"errors"
 	"github.com/go-redis/redis/v8"
 )
 
-type RedisDeleteRoleRepo struct {
-	RDB *redis.Client
-}
-
-func (repo *RedisDeleteRoleRepo) DeleteRole(roleName string) error {
-
-	// deleting role from role-list in redis
-	err := repo.RDB.SRem(ctx, "roles", roleName).Err()
+func (repo *RedisRolesManagementRepository) DeleteRole(roleName string) error {
+	roleExist, err := redisAuxiliaryHandlers.CheckRoleExist(repo.RDB, roleName)
 	if err != nil {
+		logs.Error.Println(err)
+		logs.ErrorLogger.Error(err)
 		return err
 	}
-
-	// deleting role data from redis
-	err = repo.RDB.Del(ctx, "role:"+roleName).Err()
-	if err != nil {
-		return err
+	if !roleExist {
+		return errors.New("role does not exist")
 	}
-	return nil
+	err = repo.RDB.Watch(ctx, func(tx *redis.Tx) error {
+		_, err := tx.TxPipelined(ctx, func(pipe redis.Pipeliner) error {
+			pipe.SRem(ctx, "roles", roleName) // deleting role from role-list in redis
+			pipe.Del(ctx, "role:"+roleName)   // deleting role data from redis
+			return nil
+		})
+		return err
+	})
+	return err
 }

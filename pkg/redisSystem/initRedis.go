@@ -32,7 +32,7 @@ func InitRedis() (*redis.Client, error) {
 	_, err = rdb.Ping(ctx).Result()
 	if err != nil {
 		logs.ErrorLogger.Error(err)
-		logs.Error.Fatalf("redisSystem ping failed: %v", err)
+		logs.Error.Fatalf("redis ping failed: %v", err)
 	}
 	InitializeRoles(rdb)
 	InitializeAdmin(rdb)
@@ -54,7 +54,7 @@ func InitializeRoles(rdb *redis.Client) {
 	adminRes, err := rdb.HGetAll(ctx, adminRoleKey).Result()
 	if err != nil {
 		logs.ErrorLogger.Error(err.Error())
-		logs.Error.Fatalf("redisSystem HGetAll failed: %v", err)
+		logs.Error.Fatalf("redis HGetAll failed: %v", err)
 	} else if len(adminRes) == 0 {
 		adminMatch = false
 	} else {
@@ -64,7 +64,7 @@ func InitializeRoles(rdb *redis.Client) {
 	userRes, err := rdb.HGetAll(ctx, userRoleKey).Result()
 	if err != nil {
 		logs.ErrorLogger.Error(err.Error())
-		logs.Error.Fatalf("redisSystem HGetAll failed: %v", err)
+		logs.Error.Fatalf("redis HGetAll failed: %v", err)
 	} else if len(userRes) == 0 {
 		userMatch = false
 	} else {
@@ -134,7 +134,7 @@ func InitializeAdmin(rdb *redis.Client) {
 	res, err := rdb.HGetAll(ctx, "user:"+userID).Result()
 	if err != nil {
 		logs.ErrorLogger.Error(err.Error())
-		logs.Error.Fatalf("redisSystem HGetAll failed: %v", err)
+		logs.Error.Fatalf("redis HGetAll failed: %v", err)
 	}
 	if len(res) == 0 {
 

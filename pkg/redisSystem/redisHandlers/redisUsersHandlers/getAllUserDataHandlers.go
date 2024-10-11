@@ -2,14 +2,9 @@ package redisUsersHandlers
 
 import (
 	"IAM/pkg/logs"
-	"github.com/go-redis/redis/v8"
 )
 
-type RedisGetAllUsersDataRepo struct {
-	RDB *redis.Client
-}
-
-func (repo *RedisGetAllUsersDataRepo) GetAllUsersDataFromDB() ([]map[string]string, error) {
+func (repo *RedisUsersRepository) GetAllUsersDataFromDB() ([]map[string]string, error) {
 	var users []map[string]string
 
 	// get all ID from user-list in redis

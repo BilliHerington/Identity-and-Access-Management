@@ -1,18 +1,11 @@
 package users
 
 import (
-	"IAM/pkg/handlers/auxiliary"
 	"IAM/pkg/logs"
-	"IAM/pkg/redisSystem/redisHandlers/redisAuxiliaryHandlers"
-	"IAM/pkg/redisSystem/redisHandlers/redisUsersHandlers"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v8"
 	"net/http"
 )
-
-type DeleteUserRepository interface {
-	DeleteUserDB(userID, email string) error
-}
 
 func DeleteUser(rdb *redis.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -21,37 +14,22 @@ func DeleteUser(rdb *redis.Client) gin.HandlerFunc {
 		var input struct {
 			Email string `json:"email"`
 		}
-		err := c.ShouldBindJSON(&input)
-		if err != nil {
+		if err := c.ShouldBindJSON(&input); err != nil {
+			logs.ErrorLogger.Error(err)
 			logs.Error.Println(err)
-			logs.ErrorLogger.Error(err.Error())
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-
-		// get userID
-		userID, err := auxiliary.UserIDByEmail(&redisAuxiliaryHandlers.RedisUserIDByEmailRepo{RDB: rdb}, input.Email)
-		if err != nil {
-			logs.Error.Println(err)
-			logs.ErrorLogger.Error(err.Error())
-			if err.Error() == "email not found" {
-				c.JSON(http.StatusNotFound, gin.H{"error": "email not found"})
-			} else {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			}
+			c.JSON(400, gin.H{"error": "incorrect data format, please check your input data"})
 			return
 		}
 
 		// deleting userdata from redis
-		repo := &redisUsersHandlers.RedisDeleteUserRepo{RDB: rdb}
-		err = repo.DeleteUserDB(userID, input.Email)
-		if err != nil {
+		if err := UserManageRepo.DeleteUserFromDB(input.Email); err != nil {
 			logs.Error.Println(err)
 			logs.ErrorLogger.Error(err.Error())
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			c.JSON(500, gin.H{"error": "please try again later"})
 			return
 		}
 
-		c.JSON(http.StatusOK, gin.H{"user deleted": userID + ": " + input.Email})
+		logs.AuditLogger.Info("user deleted:" + input.Email)
+		c.JSON(http.StatusOK, gin.H{"user deleted": input.Email})
 	}
 }

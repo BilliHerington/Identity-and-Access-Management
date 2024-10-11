@@ -16,7 +16,7 @@ func OauthRedirect() gin.HandlerFunc {
 		if err != nil {
 			logs.Error.Println(err)
 			logs.ErrorLogger.Error(err.Error())
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			c.JSON(500, gin.H{"error": "please try again later."})
 			return
 		}
 		authURL := config.AuthCodeURL("state-token", oauth2.AccessTypeOffline)

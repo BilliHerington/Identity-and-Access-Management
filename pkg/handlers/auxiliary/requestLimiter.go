@@ -20,7 +20,6 @@ func RequestLimiter(repo RequestLimitRepository, limit int, window int64) gin.Ha
 		if userID != "" {
 			redisKey = fmt.Sprintf("rate_limit_%s", userID)
 		} else {
-
 			// if user not authorized, use IP
 			clientIP := c.ClientIP()
 			redisKey = fmt.Sprintf("rate_limit_ip_%s", clientIP)
@@ -30,8 +29,8 @@ func RequestLimiter(repo RequestLimitRepository, limit int, window int64) gin.Ha
 		exceeded, err := repo.GetRequestLimit(redisKey, limit, window)
 		if err != nil {
 			logs.Error.Println(err)
-			logs.Error.Println(err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+			logs.ErrorLogger.Error(err)
+			c.JSON(500, gin.H{"error": "please try again later"})
 			c.Abort()
 			return
 		}
