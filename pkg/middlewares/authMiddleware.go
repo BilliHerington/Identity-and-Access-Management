@@ -27,7 +27,7 @@ func AuthMiddleware(rdb *redis.Client) gin.HandlerFunc {
 			if err.Error() == "userVersion not found" {
 				c.JSON(http.StatusNotFound, gin.H{"error": "email not found"})
 			} else {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				c.JSON(500, gin.H{"error": "please try again later"})
 			}
 			return
 		} else if !tokenValid {

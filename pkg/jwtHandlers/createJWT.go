@@ -12,7 +12,7 @@ import (
 
 func CreateJWT(email string, userVersion string, rdb *redis.Client) (string, error) {
 	// get userID from redis
-	repo := &redisAuxiliaryHandlers.RedisUserIDByEmailRepo{RDB: rdb}
+	repo := &redisAuxiliaryHandlers.RedisAuxiliaryRepository{RDB: rdb}
 	userID, err := auxiliary.UserIDByEmail(repo, email)
 	if err != nil {
 		return "", err
