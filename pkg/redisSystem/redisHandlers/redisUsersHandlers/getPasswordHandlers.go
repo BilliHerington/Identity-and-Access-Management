@@ -1,20 +1,31 @@
 package redisUsersHandlers
 
 import (
+	"IAM/pkg/logs"
+	"IAM/pkg/redisSystem/redisHandlers/redisAuxiliaryHandlers"
 	"context"
-	"github.com/go-redis/redis/v8"
 )
 
 var ctx = context.Background()
 
-type RedisGetPasswordRepo struct {
-	RDB *redis.Client
-}
+func (repo *RedisUsersRepository) GetPassword(email string) (string, error) {
 
-func (repo *RedisGetPasswordRepo) GetPassword(userID string) (string, error) {
-	pass, err := repo.RDB.HGet(ctx, "user:"+userID, "password").Result()
-	if err != nil {
+	// get userID
+	userID, err := redisAuxiliaryHandlers.GetUserIDByEmail(repo.RDB, email)
+	if err.Error() == "user does not exist" {
+		return "", err
+	} else if err != nil {
+		logs.Error.Println(err)
+		logs.ErrorLogger.Error(err)
 		return "", err
 	}
-	return pass, nil
+
+	// get password from redis
+	redisPassword, err := repo.RDB.HGet(ctx, "user:"+userID, "password").Result()
+	if err != nil {
+		logs.Error.Println(err)
+		logs.ErrorLogger.Error(err)
+		return "", err
+	}
+	return redisPassword, nil
 }

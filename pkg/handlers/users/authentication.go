@@ -1,21 +1,27 @@
 package users
 
 import (
-	"IAM/pkg/handlers/auxiliary"
 	"IAM/pkg/jwtHandlers"
 	"IAM/pkg/logs"
 	"IAM/pkg/models"
-	"IAM/pkg/redisSystem/redisHandlers/redisAuxiliaryHandlers"
-	"IAM/pkg/redisSystem/redisHandlers/redisUsersHandlers"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v8"
 	"golang.org/x/crypto/bcrypt"
-	"net/http"
 )
 
-type GetPasswordRepository interface {
-	GetPassword(userID string) (string, error)
+type UserManagementRepository interface {
+	GetPassword(email string) (string, error)
+	DeleteUserFromDB(email string) error
+	GetAllUsersDataFromDB() (map[string]string, error)
+	GetUsersListFromDB() ([]string, error)
+	StartUserRegistration(userID, email, verificationCode string) error
+	GetVerificationCode(userID string) (string, error)
+	SaveUser(userID, email, password, name, role, jwt, userVersion string) error
+	SavePassCode(userID, passCode string) error
+	GerDataForJWT(email string) (userID string, userVersion string, error error)
 }
+
+var UserManageRepo UserManagementRepository
 
 func Authenticate(rdb *redis.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -25,66 +31,29 @@ func Authenticate(rdb *redis.Client) gin.HandlerFunc {
 		if err := c.ShouldBind(&input); err != nil {
 			logs.Error.Println(err)
 			logs.ErrorLogger.Error(err.Error())
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			c.JSON(400, gin.H{"error": "incorrect data format, please check your input data"})
 			return
 		}
 
-		// check email exist
-		emailMatch, err := auxiliary.EmailMatch(&redisAuxiliaryHandlers.RedisEmailRepo{RDB: rdb}, input.Email)
+		// get saved pass from db
+		savedPass, err := UserManageRepo.GetPassword(input.Email)
 		if err != nil {
 			logs.Error.Println(err)
 			logs.ErrorLogger.Error(err.Error())
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
-		} else if !emailMatch {
-			c.JSON(http.StatusConflict, gin.H{"error": "Email does not match"})
-			return
-		}
-
-		// get userID
-		userID, err := auxiliary.UserIDByEmail(&redisAuxiliaryHandlers.RedisUserIDByEmailRepo{RDB: rdb}, input.Email)
-		if err != nil {
-			logs.Error.Println(err)
-			logs.ErrorLogger.Error(err.Error())
-			if err.Error() == "email not found" {
-				c.JSON(http.StatusNotFound, gin.H{"error": "email not found"})
-			} else {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			}
-			return
-		}
-
-		// get pass
-		repo := &redisUsersHandlers.RedisGetPasswordRepo{RDB: rdb}
-		pass, err := repo.GetPassword(userID)
-		if err != nil {
-			logs.Error.Println(err)
-			logs.ErrorLogger.Error(err.Error())
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			c.JSON(500, gin.H{"error": "please try again later"})
 			return
 		}
 
 		// Compare the provided password with the hashed password
-		err = bcrypt.CompareHashAndPassword([]byte(pass), []byte(input.Password))
-		if err != nil {
+		if err = bcrypt.CompareHashAndPassword([]byte(savedPass), []byte(input.Password)); err != nil {
 			logs.Error.Println(err.Error())
 			logs.ErrorLogger.Error(err.Error())
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Password does not match"})
+			c.JSON(400, gin.H{"error": "Password does not match"})
 			return
 		}
 
-		// get userVersion
-		userVersion, err := auxiliary.UserVersion(&redisAuxiliaryHandlers.RedisUserVersionRepo{RDB: rdb}, userID)
-		if err != nil {
-			logs.Error.Println(err)
-			logs.ErrorLogger.Error(err.Error())
-			if err.Error() == "userVersion not found" {
-				c.JSON(http.StatusNotFound, gin.H{"error": "email not found"})
-			} else {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			}
-			return
-		}
+		// get data to update JWT
+		userID, userVersion, err := UserManageRepo.GerDataForJWT(input.Email)
 
 		jwtHandlers.UpdateJWT(c, userID, userVersion, input.Email, rdb)
 		logs.AuditLogger.Printf("User: %s: %s logged in", userID, input.Email)
