@@ -19,17 +19,20 @@ func GetUserInfo(token *oauth2.Token, config *oauth2.Config) (*people.Person, er
 	// create client for working with Google People API
 	srv, err := people.NewService(ctx, option.WithHTTPClient(client))
 	if err != nil {
+		logs.Info.Println(err)
+		logs.ErrorLogger.Error(err.Error())
 		return nil, fmt.Errorf("unable to create people client: %v", err)
 	}
 
 	// request to API for getting user info
 	person, err := srv.People.Get("people/me").PersonFields("names,emailAddresses").Do()
 	if err != nil {
+		logs.Info.Println(err)
+		logs.ErrorLogger.Error(err.Error())
 		return nil, fmt.Errorf("unable to get people: %v", err)
 	}
 
 	if len(person.EmailAddresses) == 0 {
-		logs.Error.Println("Email not found in user info")
 		return nil, fmt.Errorf("email not found")
 	}
 

@@ -25,7 +25,7 @@ func CheckPrivileges(requiredPrivilege string, rdb *redis.Client) gin.HandlerFun
 		if err != nil {
 			logs.Error.Println(err)
 			logs.ErrorLogger.Error(err.Error())
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			c.JSON(500, gin.H{"error": "please try again later"})
 			c.Abort()
 			return
 		}
@@ -34,7 +34,7 @@ func CheckPrivileges(requiredPrivilege string, rdb *redis.Client) gin.HandlerFun
 		if err != nil {
 			logs.Error.Println(err)
 			logs.ErrorLogger.Error(err.Error())
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			c.JSON(500, gin.H{"error": "please try again later"})
 			c.Abort()
 			return
 		}
@@ -44,7 +44,7 @@ func CheckPrivileges(requiredPrivilege string, rdb *redis.Client) gin.HandlerFun
 		if err != nil {
 			logs.Error.Println(err)
 			logs.ErrorLogger.Error(err.Error())
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			c.JSON(500, gin.H{"error": "please try again later"})
 			c.Abort()
 			return
 		}

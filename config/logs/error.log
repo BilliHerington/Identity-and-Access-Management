@@ -53,3 +53,7 @@ time="09:10:45 | 04.10.24" level=error msg="redis: nil" func=IAM/pkg/jwtHandlers
 time="09:10:45 | 04.10.24" level=error msg="redis: nil" func=main.main.AuthMiddleware.func9 file="/Users/denisbasov/Desktop/IAM-main/pkg/middlewares/authMiddleware.go:27"
 time="09:12:28 | 04.10.24" level=error msg="redis: nil" func=IAM/pkg/jwtHandlers.IsTokenValid file="/Users/denisbasov/Desktop/IAM-main/pkg/jwtHandlers/isTokenValid.go:20"
 time="09:12:28 | 04.10.24" level=error msg="redis: nil" func=main.main.AuthMiddleware.func9 file="/Users/denisbasov/Desktop/IAM-main/pkg/middlewares/authMiddleware.go:27"
+time="06:35:38 | 10.10.24" level=error msg="dial tcp [::1]:6379: connect: connection refused" func=IAM/pkg/redisSystem.InitRedis file="/Users/denisbasov/Desktop/IAM-main/pkg/redisSystem/initRedis.go:34"
+time="11:10:39 | 10.10.24" level=error msg="no token provided" func=main.main.AuthMiddleware.func9 file="/Users/denisbasov/Desktop/IAM-main/pkg/middlewares/authMiddleware.go:17"
+time="11:12:47 | 10.10.24" level=error msg="redis: nil" func=main.main.ApproveRegistration.func5 file="/Users/denisbasov/Desktop/IAM-main/pkg/handlers/users/registration.go:136"
+time="11:30:50 | 10.10.24" level=error msg="redis: nil" func=main.main.ApproveRegistration.func5 file="/Users/denisbasov/Desktop/IAM-main/pkg/handlers/users/registration.go:138"

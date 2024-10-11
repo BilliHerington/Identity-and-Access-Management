@@ -2,36 +2,51 @@ package redisUsersHandlers
 
 import (
 	"IAM/pkg/logs"
+	"IAM/pkg/redisSystem/redisHandlers/redisAuxiliaryHandlers"
 	"github.com/go-redis/redis/v8"
 )
 
-type RedisDeleteUserRepo struct {
+type RedisUsersRepository struct {
 	RDB *redis.Client
 }
 
-func (repo *RedisDeleteUserRepo) DeleteUserDB(userID, email string) error {
+func (repo *RedisUsersRepository) DeleteUserFromDB(email string) error {
 
-	// delete user data from redis
-	err := repo.RDB.Del(ctx, "user:"+userID).Err()
+	// get userID
+	userID, err := redisAuxiliaryHandlers.GetUserIDByEmail(repo.RDB, email)
 	if err != nil {
+		if err.Error() == "user does not exist" {
+			return err
+		}
 		logs.Error.Println(err)
-		logs.ErrorLogger.Error(err.Error())
+		logs.ErrorLogger.Error(err)
 		return err
 	}
 
-	// delete email from redis
-	err = repo.RDB.Del(ctx, "email:"+email).Err()
-	if err != nil {
-		logs.Error.Println(err)
-		logs.ErrorLogger.Error(err.Error())
+	err = repo.RDB.Watch(ctx, func(tx *redis.Tx) error {
+		_, err = tx.TxPipelined(ctx, func(pipe redis.Pipeliner) error {
+			if err := pipe.Del(ctx, "user:"+userID).Err(); err != nil {
+				logs.Error.Println("Failed to delete user:", err)
+				logs.ErrorLogger.Errorf("failed to delete user: %s", err)
+				return err
+			}
+			if err := pipe.Del(ctx, "email:"+email).Err(); err != nil {
+				logs.ErrorLogger.Errorf("failed to delete user: %s", err)
+				logs.Error.Println("Failed to delete email:", err)
+				return err
+			}
+			if err := pipe.SRem(ctx, "users", userID).Err(); err != nil {
+				logs.Error.Println("Failed to remove user from set:", err)
+				
+				return err
+			}
+			return nil
+		})
 		return err
-	}
-
-	// delete userID from list in redis
-	err = repo.RDB.SRem(ctx, "users", userID).Err()
+	})
 	if err != nil {
 		logs.Error.Println(err)
-		logs.ErrorLogger.Error(err.Error())
+		logs.ErrorLogger.Error(err)
 		return err
 	}
 	return nil

@@ -22,7 +22,7 @@ func IsTokenValid(tokenString string, rdb *redis.Client) (bool, string, error) {
 	}
 	userID := claims.UserID
 	// get current userVersion from redis
-	currentUserVersion, err := auxiliary.UserVersion(&redisAuxiliaryHandlers.RedisUserVersionRepo{RDB: rdb}, userID)
+	currentUserVersion, err := auxiliary.UserVersion(&redisAuxiliaryHandlers.RedisAuxiliaryRepository{RDB: rdb}, userID)
 	if err != nil {
 		logs.Error.Println(err)
 		logs.ErrorLogger.Error(err)

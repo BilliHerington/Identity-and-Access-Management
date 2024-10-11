@@ -2,15 +2,10 @@ package roles
 
 import (
 	"IAM/pkg/logs"
-	"IAM/pkg/redisSystem/redisHandlers/redisRolesHandlers"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v8"
 	"net/http"
 )
-
-type DeleteRoleRepository interface {
-	DeleteRole(roleName string) error
-}
 
 func DeleteRole(rdb *redis.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -22,17 +17,19 @@ func DeleteRole(rdb *redis.Client) gin.HandlerFunc {
 		if err := c.ShouldBindJSON(&input); err != nil {
 			logs.Error.Print(err)
 			logs.ErrorLogger.Error(err.Error())
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			c.JSON(400, gin.H{"error": "incorrect data format, please check your input data"})
 			return
 		}
 
 		// delete role
-		repo := &redisRolesHandlers.RedisDeleteRoleRepo{RDB: rdb}
-		err := repo.DeleteRole(input.RoleName)
-		if err != nil {
+		if err := RoleManageRepo.DeleteRole(input.RoleName); err != nil {
+			if err.Error() == "role does not exist" {
+				c.JSON(400, gin.H{"error": err})
+				return
+			}
 			logs.Error.Println(err)
 			logs.ErrorLogger.Error(err.Error())
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			c.JSON(500, gin.H{"error": "please try again later"})
 			return
 		}
 

@@ -17,7 +17,7 @@ func UpdateJWT(c *gin.Context, userID, userVersion, email string, rdb *redis.Cli
 		if err.Error() == "email not found" {
 			c.JSON(http.StatusNotFound, gin.H{"error": "email not found"})
 		} else {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			c.JSON(500, gin.H{"error": "please try again later"})
 		}
 		return
 	}
@@ -27,7 +27,7 @@ func UpdateJWT(c *gin.Context, userID, userVersion, email string, rdb *redis.Cli
 	if err != nil {
 		logs.Error.Println(err)
 		logs.ErrorLogger.Error(err.Error())
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(500, gin.H{"error": "please try again later"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"jwt": signedToken})

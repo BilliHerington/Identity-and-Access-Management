@@ -2,6 +2,7 @@ package main
 
 import (
 	"IAM/initializers"
+	"IAM/pkg/handlers"
 	"IAM/pkg/handlers/auxiliary"
 	googleAuth2 "IAM/pkg/handlers/googleAuth"
 	"IAM/pkg/handlers/roles"
@@ -20,13 +21,14 @@ func init() {
 	initializers.LoadEnvVariables()
 }
 
+// TODO check google login with other accounts
 func main() {
-
 	Rdb, err := redisDB.InitRedis()
 	if err != nil {
 		logs.AuditLogger.Error(err)
 		logs.Error.Fatalf("redis init fail")
 	}
+	handlers.InitRepositories(Rdb)
 
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
@@ -47,7 +49,7 @@ func main() {
 	}
 	protected := router.Group("/")
 	{
-		protected.Use(middlewares.AuthMiddleware(Rdb), auxiliary.RequestLimiter(&redisAuxiliaryHandlers.RedisRequestRepo{RDB: Rdb}, 15, 30))
+		protected.Use(middlewares.AuthMiddleware(Rdb), auxiliary.RequestLimiter(&redisAuxiliaryHandlers.RedisAuxiliaryRepository{RDB: Rdb}, 15, 30))
 		//---users----
 		protected.GET("/get-users", users.GetUsersList(Rdb))
 		protected.GET("/get-all-users-data", middlewares.CheckPrivileges(models.AdminPrivileges.GetUserData, Rdb), users.GetAllUsersData(Rdb))
