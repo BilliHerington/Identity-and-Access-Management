@@ -6,7 +6,6 @@ import (
 	"IAM/pkg/logs"
 	"IAM/pkg/models"
 	"IAM/pkg/redisSystem/redisHandlers/redisAuxiliaryHandlers"
-	"context"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v8"
@@ -31,7 +30,7 @@ func StartRegistration(rdb *redis.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// get data from client and binding with JSON
 		var input struct {
-			Email string `json:"email" binding:"required, email"`
+			Email string `json:"email" binding:"required,email"`
 		}
 		if err := c.ShouldBind(&input); err != nil {
 			logs.Error.Println(err)
@@ -73,7 +72,7 @@ func StartRegistration(rdb *redis.Client) gin.HandlerFunc {
 		userID := uuid.New().String()[:8]
 
 		// save User in Redis
-		ctx := context.Background()
+		//ctx := context.Background()
 		//repo2 := redisAuxiliaryHandlers.RedisRegistrationRepo{RDB: rdb}
 		//err = repo2.RegisterUser(userID, input.Email, "")
 		err = rdb.Watch(ctx, func(tx *redis.Tx) error {
@@ -109,7 +108,7 @@ func StartRegistration(rdb *redis.Client) gin.HandlerFunc {
 }
 func ApproveRegistration(rdb *redis.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		ctx := context.Background()
+		//ctx := context.Background()
 
 		// getting data from client and binding
 		var input models.RegisterData
