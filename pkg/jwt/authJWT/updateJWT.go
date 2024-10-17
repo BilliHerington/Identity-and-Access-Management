@@ -11,7 +11,7 @@ func UpdateJWT(c *gin.Context, email string) {
 	userID, userVersion, err := JwtRepo.GetDataForJWT(email)
 	if err != nil {
 		if err.Error() == "user does not exist" {
-			c.JSON(400, gin.H{"error": err})
+			c.JSON(400, gin.H{"error": err.Error()})
 			return
 		}
 		logs.Error.Println(err)
@@ -28,7 +28,7 @@ func UpdateJWT(c *gin.Context, email string) {
 		return
 	}
 
-	// save new JWT in redis
+	// save new JWT in DB
 	if err = JwtRepo.SetJWT(email, signedToken); err != nil {
 		logs.Error.Println(err)
 		logs.ErrorLogger.Error(err.Error())

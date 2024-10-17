@@ -22,7 +22,7 @@ func RedactRole() gin.HandlerFunc {
 		// redact role
 		if err := RoleManageRepo.RedactRoleDB(input.RoleName, input.Privileges); err != nil {
 			if err.Error() == "role does not exist" {
-				c.JSON(400, gin.H{"error": err})
+				c.JSON(400, gin.H{"error": err.Error()})
 				return
 			}
 			logs.Error.Println(err)

@@ -10,7 +10,7 @@ func (repo *RedisRolesManagementRepository) GetAllRolesDataFromDB() ([]map[strin
 	var roles []map[string]string
 
 	// get redisRoles list from redis
-	allRoles, err := repo.RDB.SMembers(ctx, "redisRoles").Result()
+	allRoles, err := repo.RDB.SMembers(ctx, "roles").Result()
 	if errors.Is(err, redis.Nil) {
 		return roles, errors.New("no redisRoles found")
 	}

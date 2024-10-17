@@ -23,7 +23,7 @@ func DeleteRole() gin.HandlerFunc {
 		// delete role
 		if err := RoleManageRepo.DeleteRole(input.RoleName); err != nil {
 			if err.Error() == "role does not exist" {
-				c.JSON(400, gin.H{"error": err})
+				c.JSON(400, gin.H{"error": err.Error()})
 				return
 			}
 			logs.Error.Println(err)

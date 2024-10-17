@@ -36,7 +36,7 @@ func AssignRole() gin.HandlerFunc {
 		// assign role
 		if err := RoleManageRepo.AssignRoleToUser(input.Email, input.Role); err != nil {
 			if err.Error() == "role does not exist" || err.Error() == "user does not exist" {
-				c.JSON(400, gin.H{"error": err})
+				c.JSON(400, gin.H{"error": err.Error()})
 				return
 			}
 			logs.Error.Println(err)

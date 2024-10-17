@@ -8,7 +8,7 @@ func (repo *RedisUserManagementRepository) GetAllUsersDataFromDB() ([]map[string
 	var users []map[string]string
 
 	// get all ID from user-list in redis
-	listID, err := repo.RDB.SMembers(ctx, "redisUsers").Result()
+	listID, err := repo.RDB.SMembers(ctx, "users").Result()
 	if err != nil {
 		logs.Error.Println(err)
 		logs.ErrorLogger.Error(err.Error())

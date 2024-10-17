@@ -21,6 +21,6 @@ func GetUsersList() gin.HandlerFunc {
 			}
 			return
 		}
-		c.JSON(http.StatusOK, gin.H{"data": users})
+		c.JSON(http.StatusOK, gin.H{"users id`s": users})
 	}
 }
