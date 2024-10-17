@@ -1,0 +1,35 @@
+package redisUsers
+
+import (
+	"IAM/pkg/logs"
+)
+
+func (repo *RedisUserManagementRepository) GetAllUsersDataFromDB() ([]map[string]string, error) {
+	var users []map[string]string
+
+	// get all ID from user-list in redis
+	listID, err := repo.RDB.SMembers(ctx, "redisUsers").Result()
+	if err != nil {
+		logs.Error.Println(err)
+		logs.ErrorLogger.Error(err.Error())
+		return users, err
+	}
+
+	// get all data for every ID
+	for _, id := range listID {
+		userData, err := repo.RDB.HGetAll(ctx, "user:"+id).Result()
+		if err != nil {
+			logs.Error.Println(err)
+			logs.ErrorLogger.Error(err.Error())
+			return users, err
+		}
+		if len(userData) > 0 {
+			users = append(users, userData)
+		} else {
+			users = append(users, map[string]string{
+				"error": "No data found",
+			})
+		}
+	}
+	return users, nil
+}

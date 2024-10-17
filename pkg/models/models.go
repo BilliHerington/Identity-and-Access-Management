@@ -10,7 +10,7 @@ type RegisterData struct {
 	VerificationCode string `json:"verificationCode"`
 	Password         string `json:"password" binding:"required"`
 	Role             string `json:"role"`
-	JWT              string `json:"jwtHandlers"`
+	JWT              string `json:"jwt"`
 }
 
 type AuthData struct {
@@ -30,6 +30,7 @@ type UserRoleData struct {
 	Role  string `json:"role" binding:"required"`
 }
 type Claims struct {
+	Email string `json:"email" binding:"required,email"`
 	UserID      string `json:"userID" binding:"required"`
 	UserVersion string `json:"userVersion" binding:"required"`
 	jwt.StandardClaims

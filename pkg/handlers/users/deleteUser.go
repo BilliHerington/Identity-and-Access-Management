@@ -3,11 +3,19 @@ package users
 import (
 	"IAM/pkg/logs"
 	"github.com/gin-gonic/gin"
-	"github.com/go-redis/redis/v8"
 	"net/http"
 )
 
-func DeleteUser(rdb *redis.Client) gin.HandlerFunc {
+type UserManagementRepository interface {
+	DeleteUserFromDB(email string) error
+	GetAllUsersDataFromDB() ([]map[string]string, error)
+	GetUsersListFromDB() ([]string, error)
+	GetUserRole(email string) (string, error)
+}
+
+var UserManageRepo UserManagementRepository
+
+func DeleteUser() gin.HandlerFunc {
 	return func(c *gin.Context) {
 
 		// get data from client and binding with JSON
