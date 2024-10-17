@@ -5,7 +5,6 @@ import (
 	"IAM/pkg/models"
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/go-redis/redis/v8"
 	"net/http"
 )
 
@@ -16,12 +15,13 @@ type RoleManagementRepository interface {
 	GetAllRolesDataFromDB() ([]map[string]string, error)
 	GetRolesListFromDB() ([]string, error)
 	RedactRoleDB(role string, privileges []string) error
+	GetRolePrivileges(role string) ([]string, error)
 }
 
 var RoleManageRepo RoleManagementRepository
 
 // AssignRole set role for user
-func AssignRole(rdb *redis.Client) gin.HandlerFunc {
+func AssignRole() gin.HandlerFunc {
 	return func(c *gin.Context) {
 
 		// get data from client and binding with JSON

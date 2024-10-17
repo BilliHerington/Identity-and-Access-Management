@@ -3,11 +3,10 @@ package roles
 import (
 	"IAM/pkg/logs"
 	"github.com/gin-gonic/gin"
-	"github.com/go-redis/redis/v8"
 	"net/http"
 )
 
-func DeleteRole(rdb *redis.Client) gin.HandlerFunc {
+func DeleteRole() gin.HandlerFunc {
 	return func(c *gin.Context) {
 
 		// get data from client and binding with JSON

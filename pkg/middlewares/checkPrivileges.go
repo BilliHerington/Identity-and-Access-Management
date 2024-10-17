@@ -1,53 +1,43 @@
 package middlewares
 
 import (
+	"IAM/pkg/handlers/roles"
+	"IAM/pkg/handlers/users"
 	"IAM/pkg/logs"
-	"context"
-	"encoding/json"
 	"github.com/gin-gonic/gin"
-	"github.com/go-redis/redis/v8"
 	"net/http"
 )
 
-func CheckPrivileges(requiredPrivilege string, rdb *redis.Client) gin.HandlerFunc {
+type ManagementMiddlewareRepository interface {
+	GetUserRole(email string) (string, error)
+	GetRolePrivileges(role string) ([]string, error)
+}
+
+func CheckPrivileges(requiredPrivilege string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// get userID from header
-		userID := c.GetString("userID")
-		if userID == "" {
+		email := c.GetString("email")
+		if email == "" {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
 			c.Abort()
 			return
 		}
 
-		ctx := context.Background()
-		// get user role from redis
-		role, err := rdb.HGet(ctx, "user:"+userID, "role").Result()
+		role, err := users.UserManageRepo.GetUserRole(email)
 		if err != nil {
 			logs.Error.Println(err)
-			logs.ErrorLogger.Error(err.Error())
+			logs.ErrorLogger.Error(err)
 			c.JSON(500, gin.H{"error": "please try again later"})
-			c.Abort()
 			return
 		}
-		// get privileges by role
-		data, err := rdb.HGet(ctx, "role:"+role, "privileges").Result()
+		privileges, err := roles.RoleManageRepo.GetRolePrivileges(role)
 		if err != nil {
 			logs.Error.Println(err)
-			logs.ErrorLogger.Error(err.Error())
+			logs.ErrorLogger.Error(err)
 			c.JSON(500, gin.H{"error": "please try again later"})
-			c.Abort()
 			return
 		}
-		// unmarshal privileges
-		var privileges []string
-		err = json.Unmarshal([]byte(data), &privileges)
-		if err != nil {
-			logs.Error.Println(err)
-			logs.ErrorLogger.Error(err.Error())
-			c.JSON(500, gin.H{"error": "please try again later"})
-			c.Abort()
-			return
-		}
+
 		// compare user privileges with required privileges
 		hasPrivileges := false
 		for _, privilege := range privileges {

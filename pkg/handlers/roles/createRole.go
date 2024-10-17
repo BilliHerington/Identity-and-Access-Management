@@ -4,11 +4,10 @@ import (
 	"IAM/pkg/logs"
 	"IAM/pkg/models"
 	"github.com/gin-gonic/gin"
-	"github.com/go-redis/redis/v8"
 	"net/http"
 )
 
-func CreateRole(rdb *redis.Client) gin.HandlerFunc {
+func CreateRole() gin.HandlerFunc {
 	return func(c *gin.Context) {
 
 		// get data from client and binding with JSON
