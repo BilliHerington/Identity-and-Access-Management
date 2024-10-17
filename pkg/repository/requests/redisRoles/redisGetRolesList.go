@@ -6,9 +6,9 @@ import (
 )
 
 func (repo *RedisRolesManagementRepository) GetRolesListFromDB() ([]string, error) {
-	roles, err := repo.RDB.SMembers(ctx, "redisRoles").Result()
+	roles, err := repo.RDB.SMembers(ctx, "roles").Result()
 	if errors.Is(err, redis.Nil) {
-		return []string{}, errors.New("redisRoles not found")
+		return []string{}, errors.New("roles not found")
 	} else if err != nil {
 		return []string{}, err
 	}

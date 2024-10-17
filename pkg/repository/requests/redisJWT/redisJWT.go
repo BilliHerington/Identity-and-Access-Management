@@ -36,11 +36,21 @@ func (repo *JwtManagementRepository) GetDataForJWT(email string) (userID string,
 
 	return userID, userVersion, nil
 }
-func (repo *JwtManagementRepository) SetJWT(userID, jwt string) error {
-	err := repo.RDB.HSet(ctx, userID, map[string]interface{}{
-		"jwt": jwt,
-	}, 0).Err()
+func (repo *JwtManagementRepository) SetJWT(email, jwt string) error {
+
+	// get userID
+	userID, err := redisInternal.GetUserIDByEmail(repo.RDB, email)
 	if err != nil {
+		if err.Error() == "user does not exist" {
+			return err
+		}
+		logs.ErrorLogger.Error(err)
+		logs.Error.Println(err)
+		return err
+	}
+
+	// set jwt
+	if err = repo.RDB.HSet(ctx, "user:"+userID, "jwt", jwt).Err(); err != nil {
 		logs.Error.Println("failed set jwt", err)
 		logs.ErrorLogger.Error("failed set jwt", err)
 		return err

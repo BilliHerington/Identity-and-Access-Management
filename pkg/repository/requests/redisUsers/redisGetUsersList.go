@@ -6,9 +6,9 @@ import (
 )
 
 func (repo *RedisUserManagementRepository) GetUsersListFromDB() ([]string, error) {
-	user, err := repo.RDB.SMembers(ctx, "redisUsers").Result()
+	user, err := repo.RDB.SMembers(ctx, "users").Result()
 	if errors.Is(err, redis.Nil) {
-		return []string{}, errors.New("redisUsers not found")
+		return []string{}, errors.New("users not found")
 	} else if err != nil {
 		return []string{}, err
 	}

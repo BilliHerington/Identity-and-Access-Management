@@ -36,7 +36,7 @@ func (repo *RedisRolesManagementRepository) CreateRole(roleName string, privileg
 				"name":       roleName,
 				"privileges": privilegesMarshaled,
 			})
-			pipe.SAdd(ctx, "redisRoles", roleName)
+			pipe.SAdd(ctx, "roles", roleName)
 			return nil
 		})
 		return err

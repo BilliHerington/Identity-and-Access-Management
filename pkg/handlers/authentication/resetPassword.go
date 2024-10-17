@@ -35,7 +35,7 @@ func StartResetPassword() gin.HandlerFunc {
 		// add resetPassCode field to User in redis
 		if err := AuthManageRepo.SavePassCode(input.Email, resetPassCode); err != nil {
 			if err.Error() == "user does not exist" {
-				c.JSON(400, gin.H{"error": err})
+				c.JSON(400, gin.H{"error": err.Error()})
 				return
 			}
 			logs.ErrorLogger.Error(err)
@@ -78,7 +78,7 @@ func ApproveResetPassword() gin.HandlerFunc {
 		code, err := AuthManageRepo.GetVerificationCode(input.Email)
 		if err != nil {
 			if err.Error() == "user does not exist" {
-				c.JSON(400, gin.H{"error": err})
+				c.JSON(400, gin.H{"error": err.Error()})
 				return
 			}
 			logs.Error.Println(err)
@@ -109,7 +109,7 @@ func ApproveResetPassword() gin.HandlerFunc {
 			err = AuthManageRepo.SaveNewUserData(input.Email, input.NewPassword, userVersion)
 			if err != nil {
 				if err.Error() == "user does not exist" {
-					c.JSON(400, gin.H{"error": err})
+					c.JSON(400, gin.H{"error": err.Error()})
 					return
 				}
 				logs.ErrorLogger.Error(err)

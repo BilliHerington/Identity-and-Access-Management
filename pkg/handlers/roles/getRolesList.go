@@ -12,13 +12,13 @@ func GetRolesList() gin.HandlerFunc {
 		if err != nil {
 			logs.Error.Println(err)
 			logs.ErrorLogger.Error(err)
-			if err.Error() == "redisRoles not found" {
+			if err.Error() == "roles not found" {
 				c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 			} else {
 				c.JSON(500, gin.H{"error": "please try again later"})
 			}
 			return
 		}
-		c.JSON(http.StatusOK, gin.H{"redisRoles list": roles})
+		c.JSON(http.StatusOK, gin.H{"roles list": roles})
 	}
 }

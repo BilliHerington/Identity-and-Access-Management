@@ -29,8 +29,12 @@ func DeleteUser() gin.HandlerFunc {
 			return
 		}
 
-		// deleting userdata from redis
+		// deleting userdata from DB
 		if err := UserManageRepo.DeleteUserFromDB(input.Email); err != nil {
+			if err.Error() == "user does not exist" {
+				c.JSON(400, gin.H{"error": err.Error()})
+				return
+			}
 			logs.Error.Println(err)
 			logs.ErrorLogger.Error(err.Error())
 			c.JSON(500, gin.H{"error": "please try again later"})

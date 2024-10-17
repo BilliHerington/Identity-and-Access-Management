@@ -35,7 +35,7 @@ func StartRegistration() gin.HandlerFunc {
 		// save user in DB
 		if err := AuthManageRepo.StartUserRegistration(userID, input.Email, verificationCode); err != nil {
 			if err.Error() == "email already registered" {
-				c.JSON(400, gin.H{"error": err})
+				c.JSON(400, gin.H{"error": err.Error()})
 				return
 			}
 			logs.Error.Println(err)

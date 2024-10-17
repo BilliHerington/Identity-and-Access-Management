@@ -13,6 +13,7 @@ import (
 	"IAM/pkg/models"
 	"IAM/pkg/repository"
 	"github.com/gin-gonic/gin"
+	"time"
 )
 
 func init() {
@@ -25,6 +26,7 @@ func init() {
 // TODO check google login with other accounts
 
 func main() {
+	startTime := time.Now()
 	Rdb, err := redisDB.InitRedis()
 	if err != nil {
 		logs.AuditLogger.Error(err)
@@ -64,7 +66,9 @@ func main() {
 		protected.DELETE("/delete-role", middlewares.CheckPrivileges(models.AdminPrivileges.DeleteRole), roles.DeleteRole())
 		protected.POST("/redact-role", middlewares.CheckPrivileges(models.AdminPrivileges.CreateRole), roles.RedactRole())
 	}
-	logs.Info.Println("Identity and Access Management is starting")
+	endTime := time.Now()
+	res := endTime.Sub(startTime)
+	logs.Info.Printf("Identity and Access Management launched by %s", res.String())
 	err = router.Run()
 	if err != nil {
 		logs.ErrorLogger.Errorf("error running server %v", err)

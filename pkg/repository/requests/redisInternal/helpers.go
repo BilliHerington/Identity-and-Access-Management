@@ -42,7 +42,7 @@ type RedisAuxiliaryRepository struct {
 //}
 
 func CheckRoleExist(rdb *redis.Client, role string) (bool, error) {
-	isMember, err := rdb.SIsMember(ctx, "redisRoles", role).Result()
+	isMember, err := rdb.SIsMember(ctx, "roles", role).Result()
 	if err != nil {
 		return false, fmt.Errorf("failed to check role existence: %w", err)
 	}
@@ -60,7 +60,7 @@ func CheckEmailExist(rdb *redis.Client, email string) (bool, error) {
 }
 
 func GetUserIDByEmail(rdb *redis.Client, email string) (string, error) {
-	userID, err := rdb.HGet(ctx, "email:"+email, "id").Result()
+	userID, err := rdb.Get(ctx, "email:"+email).Result()
 	if errors.Is(redis.Nil, err) {
 		return "", errors.New("user does not exist")
 	} else if err != nil {

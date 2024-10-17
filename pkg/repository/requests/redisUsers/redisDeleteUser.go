@@ -34,13 +34,13 @@ func (repo *RedisUserManagementRepository) DeleteUserFromDB(email string) error 
 				return err
 			}
 			if err = pipe.Del(ctx, "email:"+email).Err(); err != nil {
-				logs.ErrorLogger.Errorf("failed to delete user: %s", err)
+				logs.ErrorLogger.Errorf("failed to delete email: %s", err)
 				logs.Error.Println("Failed to delete email:", err)
 				return err
 			}
-			if err = pipe.SRem(ctx, "redisUsers", userID).Err(); err != nil {
+			if err = pipe.SRem(ctx, "users", userID).Err(); err != nil {
 				logs.Error.Println("Failed to remove user from set:", err)
-				logs.ErrorLogger.Errorf("failed to delete user: %s", err)
+				logs.ErrorLogger.Errorf("Failed to remove user from set: %s", err)
 				return err
 			}
 			return nil

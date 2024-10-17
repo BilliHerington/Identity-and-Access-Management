@@ -22,7 +22,7 @@ func CreateRole() gin.HandlerFunc {
 		// save role
 		if err := RoleManageRepo.CreateRole(input.RoleName, input.Privileges); err != nil {
 			if err.Error() == "role already exists" {
-				c.JSON(400, gin.H{"error": err})
+				c.JSON(400, gin.H{"error": err.Error()})
 			}
 			logs.Error.Println(err)
 			logs.ErrorLogger.Error(err.Error())
