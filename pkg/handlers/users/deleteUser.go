@@ -20,7 +20,7 @@ func DeleteUser() gin.HandlerFunc {
 
 		// get data from client and binding with JSON
 		var input struct {
-			Email string `json:"email"`
+			Email string `json:"email" binding:"required,email"`
 		}
 		if err := c.ShouldBindJSON(&input); err != nil {
 			logs.ErrorLogger.Error(err)

@@ -15,7 +15,7 @@ func (repo *RedisAuthManagementRepository) StartUserRegistration(userID, email, 
 		logs.ErrorLogger.Error(err)
 		return err
 	}
-	if !emailExist {
+	if emailExist {
 		return errors.New("email already registered")
 	}
 

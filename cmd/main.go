@@ -22,7 +22,6 @@ func init() {
 	initializers.LoadEnvVariables()
 }
 
-// TODO use func in initRedis
 // TODO check google login with other accounts
 
 func main() {
