@@ -2,6 +2,7 @@ package redisRoles
 
 import (
 	"IAM/pkg/logs"
+	"IAM/pkg/models"
 	"errors"
 	"github.com/go-redis/redis/v8"
 )
@@ -12,7 +13,7 @@ func (repo *RedisRolesManagementRepository) GetAllRolesDataFromDB() ([]map[strin
 	// get redisRoles list from redis
 	allRoles, err := repo.RDB.SMembers(ctx, "roles").Result()
 	if errors.Is(err, redis.Nil) {
-		return roles, errors.New("no redisRoles found")
+		return roles, models.ErrRolesListEmpty
 	}
 	if err != nil {
 		logs.Error.Println(err)

@@ -2,8 +2,8 @@ package redisRoles
 
 import (
 	"IAM/pkg/logs"
+	"IAM/pkg/models"
 	"IAM/pkg/repository/requests/redisInternal"
-	"errors"
 	"github.com/go-redis/redis/v8"
 )
 
@@ -15,7 +15,7 @@ func (repo *RedisRolesManagementRepository) DeleteRole(roleName string) error {
 		return err
 	}
 	if !roleExist {
-		return errors.New("role does not exist")
+		return models.ErrRoleDoesNotExist
 	}
 	err = repo.RDB.Watch(ctx, func(tx *redis.Tx) error {
 		_, err := tx.TxPipelined(ctx, func(pipe redis.Pipeliner) error {

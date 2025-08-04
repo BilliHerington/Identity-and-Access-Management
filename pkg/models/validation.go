@@ -1,11 +1,16 @@
 package models
 
-import "strings"
+import (
+	"fmt"
+	"strings"
+)
 
 func ValidPassword(password string) (bool, string) {
+	minPathLength := 8
+	msg := fmt.Sprintf("Password must be at least %v characters long, contain at least one digit and one special character", &minPathLength)
 	// check length
-	if len(password) < 8 {
-		return false, "Password must be at least 8 characters long"
+	if len(password) < minPathLength {
+		return false, msg
 	}
 	// check digits
 	hasDigits := false
@@ -16,7 +21,7 @@ func ValidPassword(password string) (bool, string) {
 		}
 	}
 	if !hasDigits {
-		return false, "Password must contain at least one digit"
+		return false, msg
 	}
 	// check special chars
 	hasSpecialChars := false
@@ -28,19 +33,22 @@ func ValidPassword(password string) (bool, string) {
 		}
 	}
 	if !hasSpecialChars {
-		return false, "Password must contain at least one special character"
+		return false, msg
 	}
 
 	return true, ""
 }
 
 func ValidName(name string) (bool, string) {
+	minLen := 2
+	maxLen := 16
+	msg := fmt.Sprintf("Name must be at least %d and less than %d characters", minLen, maxLen)
 	// check length
 	if len(name) < 2 {
-		return false, "Name must be at least 2 characters"
+		return false, msg
 	}
 	if len(name) > 16 {
-		return false, "Name must be less than 16 characters"
+		return false, msg
 	}
 	// check special chars
 	hasSpecialChars := false

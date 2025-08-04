@@ -10,6 +10,7 @@ import (
 )
 
 func LoadCredentials() (*oauth2.Config, error) {
+
 	file, err := os.Open("config/credentials.json")
 	if err != nil {
 		return nil, fmt.Errorf("failed to open credentials file: %w", err)

@@ -14,6 +14,7 @@ func (repo *RedisAuthManagementRepository) SaveUserByGoogle(userID, email, passw
 	return nil
 }
 func (repo *RedisAuthManagementRepository) CheckEmailExist(email string) (bool, error) {
+	//logs.Info.Printf("trying find: %s", email)
 	emailExist, err := redisInternal.CheckEmailExist(repo.RDB, email)
 	if err != nil {
 		logs.Error.Println(err)

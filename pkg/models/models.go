@@ -12,7 +12,9 @@ type RegisterData struct {
 	Role             string `json:"role"`
 	JWT              string `json:"jwt"`
 }
-
+type EmailData struct {
+	Email string `json:"email" binding:"required,email"`
+}
 type AuthData struct {
 	Email    string `json:"email" binding:"required,email"`
 	Password string `json:"password" binding:"required"`
@@ -30,7 +32,7 @@ type UserRoleData struct {
 	Role  string `json:"role" binding:"required"`
 }
 type Claims struct {
-	Email string `json:"email" binding:"required,email"`
+	Email       string `json:"email" binding:"required,email"`
 	UserID      string `json:"userID" binding:"required"`
 	UserVersion string `json:"userVersion" binding:"required"`
 	jwt.StandardClaims
@@ -42,9 +44,10 @@ type ResetPass struct {
 }
 type AdminPrivilegeData struct {
 	// -----Admin Privileges-----
-	DeleteUser      string
-	RedactUser      string
-	GetUserData     string
+	DeleteUser  string
+	RedactUser  string
+	GetUserData string
+	//GetUserList     string
 	CreateRole      string
 	DeleteRole      string
 	GetRoleData     string
@@ -82,9 +85,10 @@ type AdminPrivilegeData struct {
 
 var AdminPrivileges = AdminPrivilegeData{
 	// -----Admin Privileges-----
-	DeleteUser:      "deleteUser",
-	RedactUser:      "redactUser",
-	GetUserData:     "getUserData",
+	DeleteUser:  "deleteUser",
+	RedactUser:  "redactUser",
+	GetUserData: "getUserData",
+	//GetUserList:     "getUserList",
 	CreateRole:      "createRole",
 	DeleteRole:      "deleteRole",
 	GetRoleData:     "getRoleData",

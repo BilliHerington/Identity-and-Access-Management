@@ -2,9 +2,9 @@ package redisRoles
 
 import (
 	"IAM/pkg/logs"
+	"IAM/pkg/models"
 	"IAM/pkg/repository/requests/redisInternal"
 	"encoding/json"
-	"errors"
 	"github.com/go-redis/redis/v8"
 )
 
@@ -26,19 +26,24 @@ func (repo *RedisRolesManagementRepository) CreateRole(roleName string, privileg
 		return err
 	}
 	if roleExist {
-		return errors.New("role already exist")
+		return models.ErrRoleAlreadyExist
 	}
 
+	logs.Info.Printf("name:%s and priv:%s", roleName, privilegesMarshaled)
 	// writing in redis
+	//var someString []string
+	//someString = []string{"penis", "penis", "penis"}
+
 	err = repo.RDB.Watch(ctx, func(tx *redis.Tx) error {
 		_, err = tx.Pipelined(ctx, func(pipe redis.Pipeliner) error {
-			pipe.HMSet(ctx, "role:"+roleName, map[string]interface{}{
-				"name":       roleName,
-				"privileges": privilegesMarshaled,
-			})
+			pipe.HSet(ctx, "role:"+roleName, "privileges", string(privilegesMarshaled))
 			pipe.SAdd(ctx, "roles", roleName)
 			return nil
 		})
+		if err != nil {
+			logs.ErrorLogger.Error(err)
+			logs.Error.Println(err)
+		}
 		return err
 	}, "role:"+roleName)
 	return err

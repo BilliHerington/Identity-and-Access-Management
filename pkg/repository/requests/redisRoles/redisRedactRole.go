@@ -2,9 +2,9 @@ package redisRoles
 
 import (
 	"IAM/pkg/logs"
+	"IAM/pkg/models"
 	"IAM/pkg/repository/requests/redisInternal"
 	"encoding/json"
-	"errors"
 )
 
 func (repo *RedisRolesManagementRepository) RedactRoleDB(roleName string, privileges []string) error {
@@ -15,7 +15,7 @@ func (repo *RedisRolesManagementRepository) RedactRoleDB(roleName string, privil
 		return err
 	}
 	if !roleExist {
-		return errors.New("role does not exist")
+		return models.ErrRoleDoesNotExist
 	}
 	marshalPrivileges, err := json.Marshal(privileges)
 	if err != nil {

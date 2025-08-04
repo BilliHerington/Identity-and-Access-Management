@@ -2,8 +2,10 @@ package redisJWT
 
 import (
 	"IAM/pkg/logs"
+	"IAM/pkg/models"
 	"IAM/pkg/repository/requests/redisInternal"
 	"context"
+	"errors"
 	"github.com/go-redis/redis/v8"
 )
 
@@ -18,7 +20,7 @@ func (repo *JwtManagementRepository) GetDataForJWT(email string) (userID string,
 	// get userID
 	userID, err := redisInternal.GetUserIDByEmail(repo.RDB, email)
 	if err != nil {
-		if err.Error() == "user does not exist" {
+		if errors.Is(err, models.ErrUserDoesNotExist) {
 			return "", "", err
 		}
 		logs.Error.Println(err)
@@ -41,7 +43,7 @@ func (repo *JwtManagementRepository) SetJWT(email, jwt string) error {
 	// get userID
 	userID, err := redisInternal.GetUserIDByEmail(repo.RDB, email)
 	if err != nil {
-		if err.Error() == "user does not exist" {
+		if errors.Is(err, models.ErrUserDoesNotExist) {
 			return err
 		}
 		logs.ErrorLogger.Error(err)
@@ -55,5 +57,6 @@ func (repo *JwtManagementRepository) SetJWT(email, jwt string) error {
 		logs.ErrorLogger.Error("failed set jwt", err)
 		return err
 	}
+	//logs.Info.Printf(userID)
 	return nil
 }

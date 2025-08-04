@@ -9,22 +9,23 @@ func SaveUserInRedis(rdb *redis.Client, userID, email, password, name, role, jwt
 	userKey := "user:" + userID
 	err := rdb.Watch(ctx, func(tx *redis.Tx) error {
 		_, err := tx.Pipelined(ctx, func(pipe redis.Pipeliner) error {
-			if err := pipe.HMSet(ctx, userKey, map[string]interface{}{
-				"id":          userID,
-				"email":       email,
-				"name":        name,
-				"password":    password,
-				"role":        role,
-				"jwt":         jwt,
-				"userVersion": userVersion,
-			}).Err(); err != nil {
+			userData := []interface{}{
+				"id", userID,
+				"email", email,
+				"name", name,
+				"password", password,
+				"role", role,
+				"jwt", jwt,
+				"userVersion", userVersion,
+			}
+			if err := pipe.HSet(ctx, userKey, userData...).Err(); err != nil {
 				logs.ErrorLogger.Error("failed set fields in userKey", err)
 				logs.Error.Println("failed set fields in userKey", err)
 				return err
 			}
-			if err := pipe.SAdd(ctx, "redisUsers", userID).Err(); err != nil {
-				logs.ErrorLogger.Error("failed add userID in redisUsers", err)
-				logs.Error.Println("failed add userID in redisUsers", err)
+			if err := pipe.SAdd(ctx, "users", userID).Err(); err != nil {
+				logs.ErrorLogger.Error("failed add userID in users", err)
+				logs.Error.Println("failed add userID in users", err)
 				return err
 			}
 			if err := pipe.Set(ctx, "email:"+email, userID, 0).Err(); err != nil {

@@ -1,9 +1,17 @@
 package middlewares
 
 import (
-	"IAM/pkg/handlers/roles"
-	"IAM/pkg/handlers/users"
 	"IAM/pkg/logs"
+	"IAM/pkg/models"
+	"IAM/pkg/service/rolesServices"
+	"IAM/pkg/service/usersServices"
+
+	//"IAM/pkg/ginhandlers/rolesHandlers"
+	//"IAM/pkg/handlers/users"
+	//"IAM/pkg/logs"
+	//"IAM/pkg/models"
+	//"github.com/gin-gonic/gin"
+	//"net/http"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
@@ -23,24 +31,26 @@ func CheckPrivileges(requiredPrivilege string) gin.HandlerFunc {
 			return
 		}
 
-		role, err := users.UserManageRepo.GetUserRole(email)
+		role, err := usersServices.UserManageRepo.GetUserRole(email)
 		if err != nil {
 			logs.Error.Println(err)
 			logs.ErrorLogger.Error(err)
-			c.JSON(500, gin.H{"error": "please try again later"})
+			c.JSON(500, gin.H{"error": models.ErrInternalServerError})
 			return
 		}
-		privileges, err := roles.RoleManageRepo.GetRolePrivileges(role)
+		userPrivileges, err := rolesServices.RoleManageRepo.GetRolePrivileges(role)
+		//		logs.Info.Println(userPrivileges)
+		//		logs.Info.Println(requiredPrivilege)
 		if err != nil {
 			logs.Error.Println(err)
 			logs.ErrorLogger.Error(err)
-			c.JSON(500, gin.H{"error": "please try again later"})
+			c.JSON(500, gin.H{"error": models.ErrInternalServerError})
 			return
 		}
 
 		// compare user privileges with required privileges
 		hasPrivileges := false
-		for _, privilege := range privileges {
+		for _, privilege := range userPrivileges {
 			if privilege == requiredPrivilege {
 				hasPrivileges = true
 				break

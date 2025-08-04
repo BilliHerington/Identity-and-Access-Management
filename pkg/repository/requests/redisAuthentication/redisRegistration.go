@@ -2,6 +2,7 @@ package redisAuthentication
 
 import (
 	"IAM/pkg/logs"
+	"IAM/pkg/models"
 	"IAM/pkg/repository/requests/redisInternal"
 	"errors"
 	"github.com/go-redis/redis/v8"
@@ -16,23 +17,19 @@ func (repo *RedisAuthManagementRepository) StartUserRegistration(userID, email, 
 		return err
 	}
 	if emailExist {
-		return errors.New("email already registered")
+		return models.ErrEmailAlreadyRegistered
 	}
 
 	userKey := "user:" + userID
 	err = repo.RDB.Watch(ctx, func(tx *redis.Tx) error {
 		_, err = tx.Pipelined(ctx, func(pipe redis.Pipeliner) error {
-			if err = pipe.HMSet(ctx, userKey, map[string]interface{}{
-				"id":               userID,
-				"email":            email,
-				"verificationCode": verificationCode,
-			}).Err(); err != nil {
+			if err = pipe.HSet(ctx, userKey, "id", userID, "email", email, "verificationCode", verificationCode).Err(); err != nil {
 				logs.ErrorLogger.Error("failed set fields in userKey", err)
 				logs.Error.Println("failed set fields in userKey", err)
 			}
-			if err = pipe.SAdd(ctx, "redisUsers", userID).Err(); err != nil {
-				logs.ErrorLogger.Error("failed add userID in redisUsers", err)
-				logs.Error.Println("failed add userID in redisUsers", err)
+			if err = pipe.SAdd(ctx, "users", userID).Err(); err != nil {
+				logs.ErrorLogger.Error("failed add userID in users", err)
+				logs.Error.Println("failed add userID in users", err)
 				return err
 			}
 			if err = pipe.Set(ctx, "email:"+email, userID, 0).Err(); err != nil {
@@ -60,7 +57,7 @@ func (repo *RedisAuthManagementRepository) StartUserRegistration(userID, email, 
 func (repo *RedisAuthManagementRepository) SaveUser(email, password, name, role, jwt, userVersion string) error {
 	userID, err := redisInternal.GetUserIDByEmail(repo.RDB, email)
 	if err != nil {
-		if err.Error() == "user does not exist" {
+		if errors.Is(err, models.ErrUserDoesNotExist) {
 			return err
 		}
 		logs.ErrorLogger.Error(err)
@@ -77,7 +74,7 @@ func (repo *RedisAuthManagementRepository) SaveUser(email, password, name, role,
 func (repo *RedisAuthManagementRepository) GetVerificationCode(email string) (string, error) {
 	userID, err := redisInternal.GetUserIDByEmail(repo.RDB, email)
 	if err != nil {
-		if err.Error() == "user does not exist" {
+		if errors.Is(err, models.ErrUserDoesNotExist) {
 			return "", err
 		}
 		logs.ErrorLogger.Error(err)
@@ -92,11 +89,31 @@ func (repo *RedisAuthManagementRepository) GetVerificationCode(email string) (st
 		logs.ErrorLogger.Error("failed get verification code", err)
 		return "", err
 	}
-	err = repo.RDB.HDel(ctx, userKey, "verificationCode").Err()
-	if err != nil {
-		logs.Error.Println("failed delete verification code field", err)
-		logs.ErrorLogger.Error("failed delete verification code field", err)
-		return "", err
-	}
+	//err = repo.RDB.HDel(ctx, userKey, "verificationCode").Err()
+	//if err != nil {
+	//	logs.Error.Println("failed delete verification code field", err)
+	//	logs.ErrorLogger.Error("failed delete verification code field", err)
+	//	return "", err
+	//}
 	return code, nil
+}
+
+func (repo *RedisAuthManagementRepository) DeleteVerificationCode(email string) error {
+	userID, err := redisInternal.GetUserIDByEmail(repo.RDB, email)
+	if err != nil {
+		if errors.Is(err, models.ErrUserDoesNotExist) {
+			return err
+		}
+		logs.ErrorLogger.Error(err)
+		logs.Error.Println(err)
+		return err
+	}
+
+	userKey := "user:" + userID
+	if err := repo.RDB.HDel(ctx, userKey, "verificationCode").Err(); err != nil {
+		logs.Error.Println("failed delete verification code", err)
+		logs.ErrorLogger.Error("failed delete verification code", err)
+		return err
+	}
+	return nil
 }

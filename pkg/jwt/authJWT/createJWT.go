@@ -35,5 +35,6 @@ func CreateJWT(email, userID, userVersion string) (string, error) {
 		logs.ErrorLogger.Error("failed sign token", err)
 		return "", err
 	}
+
 	return signedToken, nil
 }

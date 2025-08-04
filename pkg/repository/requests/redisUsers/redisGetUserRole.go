@@ -2,13 +2,15 @@ package redisUsers
 
 import (
 	"IAM/pkg/logs"
+	"IAM/pkg/models"
 	"IAM/pkg/repository/requests/redisInternal"
+	"errors"
 )
 
 func (repo *RedisUserManagementRepository) GetUserRole(email string) (string, error) {
 	userID, err := redisInternal.GetUserIDByEmail(repo.RDB, email)
 	if err != nil {
-		if err.Error() == "user does not exist" {
+		if errors.Is(err, models.ErrUserDoesNotExist) {
 			return "", err
 		}
 		logs.Error.Println(err)

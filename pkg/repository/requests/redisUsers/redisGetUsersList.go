@@ -1,6 +1,7 @@
 package redisUsers
 
 import (
+	"IAM/pkg/models"
 	"errors"
 	"github.com/go-redis/redis/v8"
 )
@@ -8,7 +9,7 @@ import (
 func (repo *RedisUserManagementRepository) GetUsersListFromDB() ([]string, error) {
 	user, err := repo.RDB.SMembers(ctx, "users").Result()
 	if errors.Is(err, redis.Nil) {
-		return []string{}, errors.New("users not found")
+		return []string{}, models.ErrUserDoesNotExist
 	} else if err != nil {
 		return []string{}, err
 	}

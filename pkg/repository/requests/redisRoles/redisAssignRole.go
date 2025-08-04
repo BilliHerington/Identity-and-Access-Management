@@ -2,6 +2,7 @@ package redisRoles
 
 import (
 	"IAM/pkg/logs"
+	"IAM/pkg/models"
 	"IAM/pkg/repository/requests/redisInternal"
 	"context"
 	"errors"
@@ -18,7 +19,7 @@ type RedisRolesManagementRepository struct {
 func (repo *RedisRolesManagementRepository) AssignRoleToUser(email, role string) error {
 	userID, err := redisInternal.GetUserIDByEmail(repo.RDB, email)
 	if err != nil {
-		if err.Error() == "user does not exist" {
+		if errors.Is(err, models.ErrUserDoesNotExist) {
 			return err
 		}
 		logs.Error.Println(err)
@@ -32,7 +33,7 @@ func (repo *RedisRolesManagementRepository) AssignRoleToUser(email, role string)
 		return err
 	}
 	if !roleExist {
-		return errors.New("role does not exist")
+		return models.ErrRoleDoesNotExist
 	}
 	err = repo.RDB.HSet(ctx, "user:"+userID, "role", role).Err()
 	if err != nil {

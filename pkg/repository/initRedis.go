@@ -1,7 +1,6 @@
 package redisDB
 
 import (
-	"IAM/initializers"
 	"IAM/pkg/logs"
 	"IAM/pkg/models"
 	"IAM/pkg/repository/requests/redisInternal"
@@ -18,26 +17,30 @@ import (
 var ctx = context.Background()
 
 func InitRedis() (*redis.Client, error) {
-	initializers.LoadEnvVariables()
+
 	addr := os.Getenv("REDIS_ADDR")
 	password := os.Getenv("REDIS_PASSWORD")
-	db, err := strconv.Atoi(os.Getenv("REDIS_DB"))
+	//password := ""
+	intDb, err := strconv.Atoi(os.Getenv("REDIS_DB"))
 	if err != nil {
-		logs.Error.Fatalf("invalid REDIS_DB value %v", err)
+		logs.Error.Printf("invalid REDIS_DB value %v", err)
 	}
 
 	rdb := redis.NewClient(&redis.Options{
 		Addr:     addr,
 		Password: password,
-		DB:       db,
+		DB:       intDb,
 	})
 	_, err = rdb.Ping(ctx).Result()
 	if err != nil {
-		logs.ErrorLogger.Error(err)
+		logs.ErrorLogger.Errorln(err)
+		logs.Info.Printf("Trying connect to redis on address: %s, with password:%s", addr, password)
 		logs.Error.Fatalf("redis ping failed: %v", err)
 	}
 	initFirstTime := os.Getenv("INIT_REDIS_IN_FIRST_TIME")
+	//logrus.Warn("test")
 	if initFirstTime == "true" {
+		logs.Info.Printf("Starting project in first time\nCheck .env if WANT change this\nCreating base DB structure...\n")
 		InitializeRoles(rdb)
 		InitializeAdmin(rdb)
 	}
@@ -58,19 +61,21 @@ func InitializeRoles(rdb *redis.Client) {
 		userPrivileges = append(userPrivileges, val.Field(i).String())
 	}
 
+	defRoleNameAdmin := "admin"
+	defRoleNameUser := "user"
 	// create roles
 	repository := redisRoles.RedisRolesManagementRepository{RDB: rdb}
-	if err := repository.CreateRole("admin", adminPrivileges); err != nil {
+	if err := repository.CreateRole(defRoleNameAdmin, adminPrivileges); err != nil {
 		logs.ErrorLogger.Error(err)
 		logs.Error.Fatal(err)
 	}
-	if err := repository.CreateRole("user", userPrivileges); err != nil {
+	if err := repository.CreateRole(defRoleNameUser, userPrivileges); err != nil {
 		logs.ErrorLogger.Error(err)
 		logs.Error.Fatal(err)
 	}
 
-	logs.AuditLogger.Println("roles 'user' and 'admin' created successfully")
-	logs.Info.Println("roles 'user' and 'admin' created successfully")
+	logs.AuditLogger.Printf("roles '%s' and '%s' created successfully", defRoleNameAdmin, defRoleNameUser)
+	logs.Info.Printf("roles '%s' and '%s' created successfully", defRoleNameAdmin, defRoleNameUser)
 
 }
 func InitializeAdmin(rdb *redis.Client) {
