@@ -74,4 +74,4 @@ All REST API endpoints can be found in the directory:
 
 **Author: Denis Basov**
 
-**GitHub: [denisbasov](https://github.com/denisbasov)**
+**GitHub: [link](https://github.com/PepeTheProger)**
