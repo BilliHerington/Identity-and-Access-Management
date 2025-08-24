@@ -72,6 +72,6 @@ All REST API endpoints can be found in the directory:
 /pkg/routes
 ## ✉️ Contact
 
-**Author: Denis Basov**
+**Author: PepeTheProger**
 
-**GitHub: [link](https://github.com/PepeTheProger)**
+**GitHub: [GitHub](https://github.com/PepeTheProger)**
